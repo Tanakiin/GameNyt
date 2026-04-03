@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { addManualGameAction } from '@/app/actions/games'
+import { addManualGameAction, type AddGameState } from '@/app/actions/games'
 import { AuthSubmitButton } from '@/components/auth/auth-submit-button'
 
 type AddGameButtonProps = {
@@ -9,7 +9,7 @@ type AddGameButtonProps = {
   source?: 'MANUAL' | 'EPIC' | 'CONSOLE' | 'OTHER'
 }
 
-const initialState = {}
+const initialState: AddGameState = {}
 
 export function AddGameButton({
   rawgId,
