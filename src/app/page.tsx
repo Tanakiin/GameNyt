@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth/get-user'
 export default async function HomePage() {
   const user = await getAuthUser()
 
+
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="mx-auto max-w-3xl text-center">
