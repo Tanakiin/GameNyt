@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { useActionState } from 'react'
-import { loginAction } from '@/app/actions/auth'
+import { loginAction, type AuthFormState } from '@/app/actions/auth'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthSubmitButton } from '@/components/auth/auth-submit-button'
 
-const initialState = {}
+const initialState: AuthFormState = {}
 
 export function LoginForm() {
   const [state, formAction] = useActionState(loginAction, initialState)
@@ -16,7 +16,14 @@ export function LoginForm() {
     <form action={formAction} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+        />
       </div>
 
       <div className="space-y-2">
