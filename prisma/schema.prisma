@@ -65,7 +65,7 @@ model Game {
   rawgId        Int?       @unique
   steamAppId    Int?       @unique
   title         String
-  slug          String?    @unique
+  slug          String?
   coverUrl      String?
   description   String?
   releaseDate   DateTime?
