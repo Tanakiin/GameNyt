@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GameSource {
+  STEAM
+  EPIC
+  MANUAL
+  CONSOLE
+  OTHER
+}
+
+enum GameStatus {
+  UNPLAYED
+  PLAYING
+  FINISHED
+  DROPPED
+}
+
+enum LinkedAccountProvider {
+  STEAM
+}
+
+enum SyncStatus {
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+model User {
+  id              String          @id @default(cuid())
+  authUserId      String?         @unique
+  email           String          @unique
+  username        String?         @unique
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  preferredGenres Json?
+  sessionLength   Int?
+
+  linkedAccounts  LinkedAccount[]
+  userGames       UserGame[]
+  syncLogs        SyncLog[]
+}
+
+model LinkedAccount {
+  id             String                @id @default(cuid())
+  userId         String
+  provider       LinkedAccountProvider
+  providerUserId String
+  lastSyncedAt   DateTime?
+  createdAt      DateTime              @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model Game {
+  id            String     @id @default(cuid())
+  rawgId        Int?       @unique
+  steamAppId    Int?       @unique
+  title         String
+  slug          String?    @unique
+  coverUrl      String?
+  description   String?
+  releaseDate   DateTime?
+  rawgRating    Float?
+  genres        Json?
+  platforms     Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  userGames     UserGame[]
+
+  @@index([title])
+}
+
+model UserGame {
+  id                String      @id @default(cuid())
+  userId            String
+  gameId            String
+  source            GameSource
+  playtimeMinutes   Int         @default(0)
+  lastPlayedAt      DateTime?
+  status            GameStatus  @default(UNPLAYED)
+  personalRating    Int?
+  notes             String?
+  importedFromSteam Boolean     @default(false)
+  isFavorite        Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId, source])
+  @@index([userId])
+  @@index([gameId])
+  @@index([status])
+}
+
+model SyncLog {
+  id        String      @id @default(cuid())
+  userId    String
+  provider  LinkedAccountProvider
+  status    SyncStatus
+  message   String?
+  syncedAt  DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, syncedAt])
+}
