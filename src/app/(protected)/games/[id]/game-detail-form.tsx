@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { updateUserGameDetailsAction, type UpdateGameDetailState } from '@/app/actions/games'
 
@@ -11,10 +11,7 @@ type Props = {
   notes: string | null
 }
 
-const initialState: {
-  error?: string
-  success?: boolean
-} = {}
+const initialState: UpdateGameDetailState = {}
 
 export function GameDetailForm({
   gameId,
@@ -36,8 +33,8 @@ export function GameDetailForm({
             defaultValue={status ?? 'UNPLAYED'}
             className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-400/40"
           >
-            <option value="UNPLAYED">Unplayed</option>
-            <option value="PLAYING">Playing</option>
+            <option value="UNPLAYED">Backlog</option>
+            <option value="PLAYING">In progress</option>
             <option value="FINISHED">Finished</option>
             <option value="DROPPED">Dropped</option>
           </select>
@@ -50,7 +47,7 @@ export function GameDetailForm({
             name="personalRating"
             min="0"
             max="10"
-            step="0.1"
+            step="1"
             defaultValue={personalRating ?? ''}
             placeholder="0 - 10"
             className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-cyan-400/40"

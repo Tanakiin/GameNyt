@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { UnlinkSteamButton } from './unlink-steam-button'
 
 type SteamLinkCardProps = {
@@ -17,6 +16,7 @@ export function SteamLinkCard({
 }: SteamLinkCardProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [buttonImageBroken, setButtonImageBroken] = useState(false)
 
   useEffect(() => {
     function handler(event: MessageEvent) {
@@ -55,7 +55,7 @@ export function SteamLinkCard({
       <div>
         <h3 className="text-lg font-semibold text-white">Steam account</h3>
         <p className="mt-1 text-sm text-neutral-400">
-          Link your Steam account directly instead of pasting a profile URL.
+          Link your Steam account with OpenID to sync owned games, playtime, and last played data.
         </p>
       </div>
 
@@ -77,17 +77,34 @@ export function SteamLinkCard({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Button
+      <div className="flex flex-wrap items-center gap-3">
+        <button
           type="button"
           onClick={openPopup}
-          className="!bg-white !text-black hover:!bg-neutral-200"
+          className="overflow-hidden rounded-md border border-neutral-700 bg-transparent transition hover:opacity-90"
+          aria-label={linked ? 'Relink Steam account' : 'Link Steam account'}
+          title={linked ? 'Relink Steam account' : 'Link Steam account'}
         >
-          {linked ? 'Relink Steam account' : 'Link Steam account'}
-        </Button>
+          {!buttonImageBroken ? (
+            <img
+              src="/steam/sits_large_border.png"
+              alt={linked ? 'Relink Steam account' : 'Sign in through Steam'}
+              className="block h-auto w-[180px]"
+              onError={() => setButtonImageBroken(true)}
+            />
+          ) : (
+            <span className="inline-flex h-11 items-center justify-center px-4 text-sm font-medium text-white">
+              {linked ? 'Relink Steam account' : 'Sign in through Steam'}
+            </span>
+          )}
+        </button>
 
         {linked ? <UnlinkSteamButton /> : null}
       </div>
+
+      <p className="text-xs text-neutral-500">
+        Put Valve’s official button image at <code className="text-neutral-300">public/steam/sits_large_border.png</code>.
+      </p>
 
       {message ? <p className="text-sm text-emerald-400">{message}</p> : null}
       {error ? <p className="text-sm text-red-400">{error}</p> : null}

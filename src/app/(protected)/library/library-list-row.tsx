@@ -1,5 +1,13 @@
 import Link from 'next/link'
 import type { Game, UserGame } from '@prisma/client'
+import {
+  formatPlaytime,
+  getGameImageUrls,
+  getPlayTier,
+  getPlayTierLabel,
+  getStatusLabel,
+  normalizeNameList,
+} from '@/lib/games/metadata'
 
 type LibraryItem = UserGame & {
   game: Game
@@ -14,6 +22,10 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
   const releaseYear = item.game.releaseDate
     ? new Date(item.game.releaseDate).getFullYear()
     : null
+  const images = getGameImageUrls(item.game)
+  const primaryImage = images[0] ?? null
+  const genres = normalizeNameList(item.game.genres).slice(0, 4)
+  const playTier = getPlayTier(item.playtimeMinutes)
 
   return (
     <Link
@@ -21,9 +33,9 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
       className="flex flex-col gap-4 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 transition hover:border-neutral-600 md:flex-row md:items-center"
     >
       <div className="h-24 w-full overflow-hidden rounded-xl bg-neutral-950 md:w-40">
-        {item.game.coverUrl ? (
+        {primaryImage ? (
           <img
-            src={item.game.coverUrl}
+            src={primaryImage}
             alt={item.game.title}
             className="h-full w-full object-cover"
           />
@@ -37,20 +49,24 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
       <div className="min-w-0 flex-1">
         <h3 className="truncate text-lg font-semibold text-white">{item.game.title}</h3>
         <p className="mt-1 text-sm text-neutral-400">
-          {item.source.toLowerCase()} • {item.status.toLowerCase()}
+          {item.source.toLowerCase()} • {getStatusLabel(item.status)} • {getPlayTierLabel(playTier)}
           {releaseYear ? ` • ${releaseYear}` : ''}
         </p>
+
+        {genres.length > 0 ? (
+          <p className="mt-1 truncate text-sm text-neutral-500">{genres.join(' • ')}</p>
+        ) : null}
       </div>
 
       <div className="grid gap-2 text-sm text-neutral-400 md:min-w-[320px] md:grid-cols-3">
         <div>
           <p className="text-neutral-500">Playtime</p>
-          <p className="text-neutral-200">{item.playtimeMinutes} min</p>
+          <p className="text-neutral-200">{formatPlaytime(item.playtimeMinutes)}</p>
         </div>
         <div>
           <p className="text-neutral-500">Rating</p>
           <p className="text-neutral-200">
-            {displayRating ? Number(displayRating).toFixed(1) : 'N/A'}
+            {displayRating !== null ? Number(displayRating).toFixed(1) : 'N/A'}
           </p>
         </div>
         <div>

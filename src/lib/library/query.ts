@@ -1,15 +1,19 @@
-import { GameSource, GameStatus, Prisma } from '@prisma/client'
+import { GameSource, GameStatus, Prisma, type Game, type UserGame } from '@prisma/client'
+import { getPlayTier, normalizeNameList } from '@/lib/games/metadata'
 
 export type LibraryLayout = 'grid' | 'list'
 export type LibrarySort = 'recent' | 'title' | 'playtime' | 'rating' | 'lastPlayed'
 export type SortDirection = 'asc' | 'desc'
 export type GridColumns = '2' | '3' | '4' | '5'
+export type LibraryTierFilter = 'all' | 'untouched' | 'tried' | 'played' | 'heavy'
+export type LibraryStatusFilter = 'all' | 'backlog' | 'playing' | 'finished' | 'dropped'
 
 export type LibraryFilters = {
   search: string
-  status: 'all' | Lowercase<GameStatus>
+  status: LibraryStatusFilter
   source: 'all' | Lowercase<GameSource>
   genre: string
+  tier: LibraryTierFilter
   layout: LibraryLayout
   sort: LibrarySort
   direction: SortDirection
@@ -30,10 +34,18 @@ export function parseLibraryFilters(
   const source = getValue('source')
   const columns = getValue('columns')
   const direction = getValue('direction')
+  const tier = getValue('tier')
 
   return {
     search: getValue('search').trim(),
     genre: getValue('genre').trim(),
+    tier:
+      tier === 'untouched' ||
+      tier === 'tried' ||
+      tier === 'played' ||
+      tier === 'heavy'
+        ? tier
+        : 'all',
     layout: layout === 'list' ? 'list' : 'grid',
     sort:
       sort === 'title' ||
@@ -44,7 +56,7 @@ export function parseLibraryFilters(
         : 'recent',
     direction: direction === 'asc' ? 'asc' : 'desc',
     status:
-      status === 'unplayed' ||
+      status === 'backlog' ||
       status === 'playing' ||
       status === 'finished' ||
       status === 'dropped'
@@ -74,7 +86,14 @@ export function buildLibraryWhere(
   }
 
   if (filters.status !== 'all') {
-    where.status = filters.status.toUpperCase() as GameStatus
+    const statusMap: Record<Exclude<LibraryStatusFilter, 'all'>, GameStatus> = {
+      backlog: GameStatus.UNPLAYED,
+      playing: GameStatus.PLAYING,
+      finished: GameStatus.FINISHED,
+      dropped: GameStatus.DROPPED,
+    }
+
+    where.status = statusMap[filters.status]
   }
 
   if (filters.source !== 'all') {
@@ -104,7 +123,7 @@ export function buildLibraryOrderBy(
     case 'playtime':
       return [{ playtimeMinutes: dir }, { createdAt: 'desc' }]
     case 'rating':
-      return [{ personalRating: dir }, { createdAt: 'desc' }]
+      return [{ personalRating: dir }, { game: { rawgRating: dir } }, { createdAt: 'desc' }]
     case 'lastPlayed':
       return [{ lastPlayedAt: dir }, { createdAt: 'desc' }]
     case 'recent':
@@ -125,4 +144,38 @@ export function getGridClass(columns: GridColumns) {
     default:
       return 'grid gap-4 sm:grid-cols-2 xl:grid-cols-4'
   }
+}
+
+type LibraryItem = UserGame & {
+  game: Game
+}
+
+export function matchesLibraryClientFilters(item: LibraryItem, filters: LibraryFilters) {
+  if (filters.genre) {
+    const genres = normalizeNameList(item.game.genres)
+    const hasGenre = genres.some(
+      (genre) => genre.toLowerCase() === filters.genre.toLowerCase()
+    )
+
+    if (!hasGenre) {
+      return false
+    }
+  }
+
+  if (filters.tier !== 'all') {
+    const tier = getPlayTier(item.playtimeMinutes)
+
+    const tierMap = {
+      untouched: 'UNTOUCHED',
+      tried: 'TRIED',
+      played: 'PLAYED',
+      heavy: 'HEAVILY_PLAYED',
+    } as const
+
+    if (tier !== tierMap[filters.tier]) {
+      return false
+    }
+  }
+
+  return true
 }

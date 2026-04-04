@@ -11,6 +11,11 @@ export type AddGameState = {
   success?: string
 }
 
+export type UpdateGameDetailState = {
+  error?: string
+  success?: boolean
+}
+
 export async function addManualGameAction(
   _prevState: AddGameState,
   formData: FormData
@@ -68,11 +73,6 @@ export async function addManualGameAction(
   return { success: 'Game added to your library.' }
 }
 
-export type UpdateGameDetailState = {
-  error?: string
-  success?: boolean
-}
-
 export async function updateUserGameDetailsAction(
   _prevState: UpdateGameDetailState,
   formData: FormData
@@ -97,15 +97,17 @@ export async function updateUserGameDetailsAction(
     ? (statusValue as GameStatus)
     : undefined
 
-  const personalRating =
+  const parsedRating =
     personalRatingRaw.trim() === '' ? null : Number(personalRatingRaw)
 
   if (
-    personalRating !== null &&
-    (!Number.isFinite(personalRating) || personalRating < 0 || personalRating > 10)
+    parsedRating !== null &&
+    (!Number.isFinite(parsedRating) || parsedRating < 0 || parsedRating > 10)
   ) {
     return { error: 'Rating must be between 0 and 10.' }
   }
+
+  const personalRating = parsedRating === null ? null : Math.round(parsedRating)
 
   const existingUserGame = await prisma.userGame.findFirst({
     where: {

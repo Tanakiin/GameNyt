@@ -15,6 +15,7 @@ function getSteamApiKey() {
 
 export async function getOwnedSteamGames(steamId: string) {
   const key = getSteamApiKey()
+
   const url = new URL(`${STEAM_BASE_URL}/IPlayerService/GetOwnedGames/v1/`)
   url.searchParams.set('key', key)
   url.searchParams.set('steamid', steamId)

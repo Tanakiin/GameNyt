@@ -2,34 +2,22 @@ import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/get-user'
+import {
+  formatDateShort,
+  formatPlaytime,
+  getGameImageUrls,
+  getPlayTier,
+  getPlayTierLabel,
+  getStatusLabel,
+  normalizeNameList,
+} from '@/lib/games/metadata'
+import { HoverScrubGallery } from '@/components/games/hover-scrub-gallery'
 import { GameDetailForm } from './game-detail-form'
 
 type PageProps = {
   params: Promise<{
     id: string
   }>
-}
-
-function formatDate(date: Date | null) {
-  if (!date) return 'Unknown'
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(date)
-}
-
-function formatMinutes(minutes: number | null) {
-  if (!minutes || minutes <= 0) return '0h'
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (mins === 0) return `${hours}h`
-  return `${hours}h ${mins}m`
-}
-
-function parseStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return []
-  return value.filter((item): item is string => typeof item === 'string')
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -74,24 +62,30 @@ export default async function GameDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  const genres = parseStringArray(userGame.game.genres)
-  const platforms = parseStringArray(userGame.game.platforms)
+  const genres = normalizeNameList(userGame.game.genres)
+  const platforms = normalizeNameList(userGame.game.platforms)
+  const images = getGameImageUrls(userGame.game)
+  const playTier = getPlayTier(userGame.playtimeMinutes)
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-          {userGame.game.coverUrl ? (
-            <img
-              src={userGame.game.coverUrl}
-              alt={userGame.game.title}
-              className="aspect-[3/4] w-full object-cover"
-            />
-          ) : (
-            <div className="flex aspect-[3/4] items-center justify-center bg-white/5 text-sm text-white/50">
-              No cover available
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,1fr)]">
+        <div className="space-y-6">
+          <HoverScrubGallery
+            images={images}
+            title={userGame.game.title}
+            aspectClassName="aspect-[16/9]"
+            roundedClassName="rounded-2xl"
+          />
+
+          {userGame.game.description ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <h2 className="text-lg font-semibold text-white">About</h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-6 text-white/70">
+                {userGame.game.description}
+              </p>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-6">
@@ -106,17 +100,22 @@ export default async function GameDetailPage({ params }: PageProps) {
                 </p>
               </div>
 
-              <div className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-sm text-cyan-200">
-                {userGame.status ?? 'UNPLAYED'}
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-sm text-cyan-200">
+                  {getStatusLabel(userGame.status)}
+                </span>
+                <span className="rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1 text-sm text-violet-200">
+                  {getPlayTierLabel(playTier)}
+                </span>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <InfoCard label="Release date" value={formatDate(userGame.game.releaseDate)} />
+              <InfoCard label="Release date" value={formatDateShort(userGame.game.releaseDate)} />
               <InfoCard label="RAWG rating" value={userGame.game.rawgRating?.toString() ?? 'N/A'} />
               <InfoCard label="Your rating" value={userGame.personalRating?.toString() ?? 'N/A'} />
-              <InfoCard label="Playtime" value={formatMinutes(userGame.playtimeMinutes)} />
-              <InfoCard label="Last played" value={formatDate(userGame.lastPlayedAt)} />
+              <InfoCard label="Playtime" value={formatPlaytime(userGame.playtimeMinutes)} />
+              <InfoCard label="Last played" value={formatDateShort(userGame.lastPlayedAt)} />
               <InfoCard label="Source" value={userGame.source} />
             </div>
 
@@ -160,7 +159,7 @@ export default async function GameDetailPage({ params }: PageProps) {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <h2 className="text-lg font-semibold text-white">Edit your game data</h2>
             <p className="mt-1 text-sm text-white/55">
-              Update your status, rating, and notes for this game.
+              Status is manual. Play tier is computed automatically from playtime.
             </p>
 
             <div className="mt-5">

@@ -63,21 +63,23 @@ model LinkedAccount {
 }
 
 model Game {
-  id            String     @id @default(cuid())
-  rawgId        Int?       @unique
-  steamAppId    Int?       @unique
-  title         String
-  slug          String?
-  coverUrl      String?
-  description   String?
-  releaseDate   DateTime?
-  rawgRating    Float?
-  genres        Json?
-  platforms     Json?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id                 String     @id @default(cuid())
+  rawgId             Int?       @unique
+  steamAppId         Int?       @unique
+  title              String
+  slug               String?
+  coverUrl           String?
+  backgroundImageUrl String?
+  screenshots        Json?
+  description        String?
+  releaseDate        DateTime?
+  rawgRating         Float?
+  genres             Json?
+  platforms          Json?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
-  userGames     UserGame[]
+  userGames          UserGame[]
 
   @@index([title])
 }
@@ -104,6 +106,7 @@ model UserGame {
   @@index([userId])
   @@index([gameId])
   @@index([status])
+  @@index([lastPlayedAt])
 }
 
 model SyncLog {

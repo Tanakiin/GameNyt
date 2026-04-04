@@ -59,6 +59,7 @@ async function findOrCreateSteamGame({
     data: {
       steamAppId: appid,
       title: name?.trim() || `Steam App ${appid}`,
+      screenshots: [],
     },
   })
 }
@@ -90,6 +91,8 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
         name: steamGame.name,
       })
 
+      const playtimeMinutes = steamGame.playtime_forever ?? 0
+
       const lastPlayedAt =
         steamGame.rtime_last_played && steamGame.rtime_last_played > 0
           ? new Date(steamGame.rtime_last_played * 1000)
@@ -107,9 +110,13 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
         await prisma.userGame.update({
           where: { id: existingUserGame.id },
           data: {
-            playtimeMinutes: steamGame.playtime_forever ?? 0,
+            playtimeMinutes,
             lastPlayedAt,
             importedFromSteam: true,
+            status:
+              existingUserGame.status === GameStatus.UNPLAYED && playtimeMinutes > 0
+                ? GameStatus.PLAYING
+                : existingUserGame.status,
           },
         })
       } else {
@@ -118,10 +125,10 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
             userId: currentUser.id,
             gameId: game.id,
             source: 'STEAM',
-            playtimeMinutes: steamGame.playtime_forever ?? 0,
+            playtimeMinutes,
             lastPlayedAt,
             importedFromSteam: true,
-            status: GameStatus.UNPLAYED,
+            status: playtimeMinutes > 0 ? GameStatus.PLAYING : GameStatus.UNPLAYED,
           },
         })
       }
