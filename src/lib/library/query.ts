@@ -2,6 +2,7 @@ import { GameSource, GameStatus, Prisma } from '@prisma/client'
 
 export type LibraryLayout = 'grid' | 'list'
 export type LibrarySort = 'recent' | 'title' | 'playtime' | 'rating' | 'lastPlayed'
+export type SortDirection = 'asc' | 'desc'
 export type GridColumns = '2' | '3' | '4' | '5'
 
 export type LibraryFilters = {
@@ -11,6 +12,7 @@ export type LibraryFilters = {
   genre: string
   layout: LibraryLayout
   sort: LibrarySort
+  direction: SortDirection
   columns: GridColumns
 }
 
@@ -27,6 +29,7 @@ export function parseLibraryFilters(
   const status = getValue('status')
   const source = getValue('source')
   const columns = getValue('columns')
+  const direction = getValue('direction')
 
   return {
     search: getValue('search').trim(),
@@ -39,6 +42,7 @@ export function parseLibraryFilters(
       sort === 'lastPlayed'
         ? sort
         : 'recent',
+    direction: direction === 'asc' ? 'asc' : 'desc',
     status:
       status === 'unplayed' ||
       status === 'playing' ||
@@ -92,17 +96,20 @@ export function buildLibraryWhere(
 export function buildLibraryOrderBy(
   filters: LibraryFilters
 ): Prisma.UserGameOrderByWithRelationInput[] {
+  const dir = filters.direction
+
   switch (filters.sort) {
     case 'title':
-      return [{ game: { title: 'asc' } }]
+      return [{ game: { title: dir } }]
     case 'playtime':
-      return [{ playtimeMinutes: 'desc' }, { createdAt: 'desc' }]
+      return [{ playtimeMinutes: dir }, { createdAt: 'desc' }]
     case 'rating':
-      return [{ personalRating: 'desc' }, { createdAt: 'desc' }]
+      return [{ personalRating: dir }, { createdAt: 'desc' }]
     case 'lastPlayed':
-      return [{ lastPlayedAt: 'desc' }, { createdAt: 'desc' }]
+      return [{ lastPlayedAt: dir }, { createdAt: 'desc' }]
+    case 'recent':
     default:
-      return [{ createdAt: 'desc' }]
+      return [{ createdAt: dir }]
   }
 }
 

@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { ArrowUpDown, Grid3X3, LayoutList, Search, SlidersHorizontal } from 'lucide-react'
+import { Grid3X3, LayoutList, Search, SlidersHorizontal } from 'lucide-react'
 import type { LibraryFilters } from '@/lib/library/query'
 
 type LibraryToolbarProps = {
@@ -18,10 +18,36 @@ export function LibraryToolbar({ filters, genres }: LibraryToolbarProps) {
   const [showSortPanel, setShowSortPanel] = useState(false)
   const [showLayoutPanel, setShowLayoutPanel] = useState(false)
 
+  const sortPanelRef = useRef<HTMLDivElement | null>(null)
+  const layoutPanelRef = useRef<HTMLDivElement | null>(null)
+
   const currentParams = useMemo(
     () => new URLSearchParams(searchParams.toString()),
     [searchParams]
   )
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node
+
+      if (
+        sortPanelRef.current &&
+        !sortPanelRef.current.contains(target)
+      ) {
+        setShowSortPanel(false)
+      }
+
+      if (
+        layoutPanelRef.current &&
+        !layoutPanelRef.current.contains(target)
+      ) {
+        setShowLayoutPanel(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   function updateParam(key: string, value: string) {
     const params = new URLSearchParams(currentParams.toString())
@@ -35,16 +61,13 @@ export function LibraryToolbar({ filters, genres }: LibraryToolbarProps) {
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  function handleSearchChange(value: string) {
-    updateParam('search', value)
-  }
-
   function clearFilters() {
     const params = new URLSearchParams(currentParams.toString())
     params.delete('status')
     params.delete('source')
     params.delete('genre')
     params.delete('sort')
+    params.delete('direction')
     router.push(`${pathname}?${params.toString()}`)
   }
 
@@ -58,14 +81,14 @@ export function LibraryToolbar({ filters, genres }: LibraryToolbarProps) {
           />
           <input
             value={filters.search}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e) => updateParam('search', e.target.value)}
             placeholder="Search your library..."
             className="h-10 w-full rounded-xl border border-neutral-800 bg-neutral-900 pl-10 pr-3 text-sm text-white outline-none transition focus:border-neutral-600"
           />
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <div className="relative">
+          <div className="relative" ref={sortPanelRef}>
             <button
               type="button"
               onClick={() => {
@@ -95,6 +118,20 @@ export function LibraryToolbar({ filters, genres }: LibraryToolbarProps) {
                       <option value="playtime">Playtime</option>
                       <option value="rating">Rating</option>
                       <option value="lastPlayed">Last played</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                      Direction
+                    </label>
+                    <select
+                      value={filters.direction}
+                      onChange={(e) => updateParam('direction', e.target.value)}
+                      className="h-10 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 text-sm text-white outline-none"
+                    >
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
                     </select>
                   </div>
 
@@ -163,7 +200,7 @@ export function LibraryToolbar({ filters, genres }: LibraryToolbarProps) {
             ) : null}
           </div>
 
-          <div className="relative">
+          <div className="relative" ref={layoutPanelRef}>
             <button
               type="button"
               onClick={() => {
