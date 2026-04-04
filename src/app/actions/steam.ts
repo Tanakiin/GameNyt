@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/get-user'
-import { resolveSteamId, getOwnedSteamGames } from '@/lib/steam/client'
+import { getOwnedSteamGames } from '@/lib/steam/client'
 import { upsertGameFromRawg } from '@/lib/db/games'
 import { GameStatus } from '@prisma/client'
 
@@ -79,13 +79,12 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
     },
   })
 
-  if (!linkedAccount?.profileUrl) {
-    return { error: 'Add your Steam profile or Steam ID in settings first.' }
+  if (!linkedAccount?.providerUserId || linkedAccount.providerUserId === 'pending') {
+    return { error: 'Link your Steam account first.' }
   }
 
   try {
-    const steamId = await resolveSteamId(linkedAccount.profileUrl)
-    const ownedGames = await getOwnedSteamGames(steamId)
+    const ownedGames = await getOwnedSteamGames(linkedAccount.providerUserId)
 
     for (const steamGame of ownedGames) {
       const game = await findOrCreateSteamGame({
@@ -133,7 +132,6 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
     await prisma.linkedAccount.update({
       where: { id: linkedAccount.id },
       data: {
-        providerUserId: steamId,
         lastSyncedAt: new Date(),
       },
     })

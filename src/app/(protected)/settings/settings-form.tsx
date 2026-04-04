@@ -25,40 +25,28 @@ const GENRES = [
 
 type SettingsFormProps = {
   username?: string | null
-  steamProfile?: string | null
   preferredGenres?: string[]
   sessionLengthMinutes?: number | null
 }
 
 export function SettingsForm({
   username,
-  steamProfile,
   preferredGenres = [],
   sessionLengthMinutes,
 }: SettingsFormProps) {
   const [state, formAction] = useActionState(saveSettingsAction, initialState)
 
   const defaultSession =
-    sessionLengthMinutes === 30 ? 'short' :
-    sessionLengthMinutes === 90 ? 'medium' :
-    sessionLengthMinutes === 180 ? 'long' :
-    ''
+    sessionLengthMinutes === 30 ? 'short'
+      : sessionLengthMinutes === 90 ? 'medium'
+      : sessionLengthMinutes === 180 ? 'long'
+      : ''
 
   return (
     <form action={formAction} className="space-y-8 rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
       <div className="space-y-2">
         <Label htmlFor="username">Username</Label>
         <Input id="username" name="username" defaultValue={username ?? ''} placeholder="tanay" />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="steamProfile">Steam profile / Steam ID</Label>
-        <Input
-          id="steamProfile"
-          name="steamProfile"
-          defaultValue={steamProfile ?? ''}
-          placeholder="https://steamcommunity.com/id/yourname or 7656119..."
-        />
       </div>
 
       <div className="space-y-3">
@@ -85,16 +73,13 @@ export function SettingsForm({
         <Label>Typical session length</Label>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-neutral-200">
-            <input type="radio" name="sessionLength" value="short" defaultChecked={defaultSession === 'short'} />{' '}
-            Short session
+            <input type="radio" name="sessionLength" value="short" defaultChecked={defaultSession === 'short'} /> Short session
           </label>
           <label className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-neutral-200">
-            <input type="radio" name="sessionLength" value="medium" defaultChecked={defaultSession === 'medium'} />{' '}
-            Medium session
+            <input type="radio" name="sessionLength" value="medium" defaultChecked={defaultSession === 'medium'} /> Medium session
           </label>
           <label className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-neutral-200">
-            <input type="radio" name="sessionLength" value="long" defaultChecked={defaultSession === 'long'} />{' '}
-            Long session
+            <input type="radio" name="sessionLength" value="long" defaultChecked={defaultSession === 'long'} /> Long session
           </label>
         </div>
       </div>

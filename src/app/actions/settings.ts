@@ -37,7 +37,6 @@ export async function saveSettingsAction(
   }
 
   const username = String(formData.get('username') ?? '').trim() || null
-  const steamProfile = String(formData.get('steamProfile') ?? '').trim()
   const sessionLength = String(formData.get('sessionLength') ?? '').trim()
   const preferredGenres = formData.getAll('preferredGenres').map(String)
 
@@ -77,34 +76,8 @@ export async function saveSettingsAction(
     },
   })
 
-  const existingSteam = await prisma.linkedAccount.findFirst({
-    where: {
-      userId: currentUser.id,
-      provider: 'STEAM',
-    },
-  })
-
-  if (steamProfile) {
-    if (existingSteam) {
-      await prisma.linkedAccount.update({
-        where: { id: existingSteam.id },
-        data: {
-          profileUrl: steamProfile,
-        },
-      })
-    } else {
-      await prisma.linkedAccount.create({
-        data: {
-          userId: currentUser.id,
-          provider: 'STEAM',
-          providerUserId: 'pending',
-          profileUrl: steamProfile,
-        },
-      })
-    }
-  }
-
   revalidatePath('/settings')
   revalidatePath('/dashboard')
+
   return { success: 'Settings saved.' }
 }
