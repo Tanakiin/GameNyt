@@ -47,16 +47,18 @@ model User {
 }
 
 model LinkedAccount {
-  id             String                @id @default(cuid())
-  userId         String
-  provider       LinkedAccountProvider
-  providerUserId String
-  lastSyncedAt   DateTime?
-  createdAt      DateTime              @default(now())
+  id               String                @id @default(cuid())
+  userId           String
+  provider         LinkedAccountProvider
+  providerUserId   String
+  profileUrl       String?
+  lastSyncedAt     DateTime?
+  createdAt        DateTime              @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerUserId])
+  @@unique([userId, provider])
   @@index([userId])
 }
 

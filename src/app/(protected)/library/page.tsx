@@ -54,8 +54,8 @@ export default async function LibraryPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-neutral-500">
-                    No image
+                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-950 text-sm text-neutral-500">
+                      No image
                   </div>
                 )}
               </div>
