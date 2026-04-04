@@ -1,12 +1,7 @@
 import { GameSource, GameStatus, Prisma } from '@prisma/client'
 
 export type LibraryLayout = 'grid' | 'list'
-export type LibrarySort =
-  | 'recent'
-  | 'title'
-  | 'playtime'
-  | 'rating'
-  | 'lastPlayed'
+export type LibrarySort = 'recent' | 'title' | 'playtime' | 'rating' | 'lastPlayed'
 
 export type LibraryFilters = {
   search: string
@@ -70,26 +65,11 @@ export function buildLibraryWhere(userId: string, filters: LibraryFilters): Pris
     where.source = filters.source.toUpperCase() as GameSource
   }
 
-  if (filters.search || filters.genre) {
-    where.game = {}
-  }
-
   if (filters.search) {
     where.game = {
-      ...where.game,
       title: {
         contains: filters.search,
         mode: 'insensitive',
-      },
-    }
-  }
-
-  if (filters.genre) {
-    where.game = {
-      ...where.game,
-      genres: {
-        path: '$[*].name',
-        array_contains: [filters.genre],
       },
     }
   }
@@ -107,7 +87,6 @@ export function buildLibraryOrderBy(filters: LibraryFilters): Prisma.UserGameOrd
       return [{ personalRating: 'desc' }, { createdAt: 'desc' }]
     case 'lastPlayed':
       return [{ lastPlayedAt: 'desc' }, { createdAt: 'desc' }]
-    case 'recent':
     default:
       return [{ createdAt: 'desc' }]
   }

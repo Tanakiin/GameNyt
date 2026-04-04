@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/get-user'
-import { Button } from '@/components/ui/button'
 import {
   buildLibraryOrderBy,
   buildLibraryWhere,
@@ -66,23 +65,24 @@ export default async function LibraryPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm text-neutral-500">Library</p>
-          <h2 className="text-3xl font-semibold tracking-tight">Your games</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-white">Your games</h2>
           <p className="mt-2 text-neutral-400">
             Browse, sort, and filter your library across all sources.
           </p>
         </div>
 
-        <Link href="/library/add">
-          <Button className="!bg-white !text-black hover:!bg-neutral-200">
-            Add game
-          </Button>
+        <Link
+          href="/library/add"
+          className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-4 text-sm font-medium !text-black hover:bg-neutral-200"
+        >
+          Add game
         </Link>
       </div>
 
       <LibraryControls filters={filters} genres={genres} />
 
       {userGames.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/50 p-8 text-neutral-400">
+        <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-900/50 p-8 text-neutral-400">
           No games match your current filters.
         </div>
       ) : filters.layout === 'list' ? (

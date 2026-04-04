@@ -1,8 +1,6 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import type { LibraryFilters } from '@/lib/library/query'
 
 type LibraryControlsProps = {
@@ -27,102 +25,113 @@ export function LibraryControls({ filters, genres }: LibraryControlsProps) {
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  function handleSearchSubmit(formData: FormData) {
-    const value = String(formData.get('search') ?? '').trim()
-    updateParam('search', value)
-  }
-
   function clearFilters() {
     router.push(pathname)
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
-      <form
-        action={handleSearchSubmit}
-        className="flex flex-col gap-3 lg:flex-row"
-      >
-        <Input
-          name="search"
-          defaultValue={filters.search}
-          placeholder="Search by title..."
-          className="flex-1"
-        />
-        <Button
-          type="submit"
-          className="!bg-white !text-black hover:!bg-neutral-200"
-        >
-          Search
-        </Button>
-      </form>
+    <div className="rounded-2xl border border-neutral-700 bg-neutral-900 p-5">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-white">Library controls</h3>
+        <p className="mt-1 text-sm text-neutral-400">
+          Search, sort, filter, and change layout.
+        </p>
+      </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-        <select
-          value={filters.layout}
-          onChange={(e) => updateParam('layout', e.target.value)}
-          className="h-11 rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-white outline-none"
-        >
-          <option value="grid">Grid view</option>
-          <option value="list">List view</option>
-        </select>
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-200">Search</label>
+          <input
+            value={filters.search}
+            onChange={(e) => updateParam('search', e.target.value)}
+            placeholder="Search by title..."
+            className="h-11 w-full rounded-xl border border-neutral-700 bg-black px-3 text-sm text-white outline-none"
+          />
+        </div>
 
-        <select
-          value={filters.sort}
-          onChange={(e) => updateParam('sort', e.target.value)}
-          className="h-11 rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-white outline-none"
-        >
-          <option value="recent">Recently added</option>
-          <option value="title">Title</option>
-          <option value="playtime">Playtime</option>
-          <option value="rating">Personal rating</option>
-          <option value="lastPlayed">Last played</option>
-        </select>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-200">Layout</label>
+          <select
+            value={filters.layout}
+            onChange={(e) => updateParam('layout', e.target.value)}
+            className="h-11 w-full rounded-xl border border-neutral-700 bg-black px-3 text-sm text-white outline-none"
+          >
+            <option value="grid">Grid</option>
+            <option value="list">List</option>
+          </select>
+        </div>
 
-        <select
-          value={filters.status}
-          onChange={(e) => updateParam('status', e.target.value)}
-          className="h-11 rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-white outline-none"
-        >
-          <option value="all">All statuses</option>
-          <option value="unplayed">Unplayed</option>
-          <option value="playing">Playing</option>
-          <option value="finished">Finished</option>
-          <option value="dropped">Dropped</option>
-        </select>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-200">Sort by</label>
+          <select
+            value={filters.sort}
+            onChange={(e) => updateParam('sort', e.target.value)}
+            className="h-11 w-full rounded-xl border border-neutral-700 bg-black px-3 text-sm text-white outline-none"
+          >
+            <option value="recent">Recently added</option>
+            <option value="title">Title</option>
+            <option value="playtime">Playtime</option>
+            <option value="rating">Rating</option>
+            <option value="lastPlayed">Last played</option>
+          </select>
+        </div>
 
-        <select
-          value={filters.source}
-          onChange={(e) => updateParam('source', e.target.value)}
-          className="h-11 rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-white outline-none"
-        >
-          <option value="all">All sources</option>
-          <option value="steam">Steam</option>
-          <option value="epic">Epic</option>
-          <option value="manual">Manual</option>
-          <option value="console">Console</option>
-          <option value="other">Other</option>
-        </select>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-200">Status</label>
+          <select
+            value={filters.status}
+            onChange={(e) => updateParam('status', e.target.value)}
+            className="h-11 w-full rounded-xl border border-neutral-700 bg-black px-3 text-sm text-white outline-none"
+          >
+            <option value="all">All statuses</option>
+            <option value="unplayed">Unplayed</option>
+            <option value="playing">Playing</option>
+            <option value="finished">Finished</option>
+            <option value="dropped">Dropped</option>
+          </select>
+        </div>
 
-        <select
-          value={filters.genre}
-          onChange={(e) => updateParam('genre', e.target.value)}
-          className="h-11 rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-white outline-none"
-        >
-          <option value="">All genres</option>
-          {genres.map((genre) => (
-            <option key={genre} value={genre}>
-              {genre}
-            </option>
-          ))}
-        </select>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-200">Source</label>
+          <select
+            value={filters.source}
+            onChange={(e) => updateParam('source', e.target.value)}
+            className="h-11 w-full rounded-xl border border-neutral-700 bg-black px-3 text-sm text-white outline-none"
+          >
+            <option value="all">All sources</option>
+            <option value="steam">Steam</option>
+            <option value="epic">Epic</option>
+            <option value="manual">Manual</option>
+            <option value="console">Console</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
 
-        <Button
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-neutral-200">Genre</label>
+          <select
+            value={filters.genre}
+            onChange={(e) => updateParam('genre', e.target.value)}
+            className="h-11 w-full rounded-xl border border-neutral-700 bg-black px-3 text-sm text-white outline-none"
+          >
+            <option value="">All genres</option>
+            {genres.map((genre) => (
+              <option key={genre} value={genre}>
+                {genre}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <button
           type="button"
-          variant="outline"
           onClick={clearFilters}
+          className="rounded-xl border border-neutral-700 bg-neutral-950 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
         >
-          Clear
-        </Button>
+          Clear filters
+        </button>
       </div>
     </div>
   )
