@@ -27,7 +27,8 @@ export async function getOwnedSteamGames(steamId: string) {
   })
 
   if (!response.ok) {
-    throw new Error(`Steam owned games request failed with status ${response.status}`)
+    const body = await response.text()
+    throw new Error(`Steam owned games request failed with status ${response.status}: ${body}`)
   }
 
   const data = (await response.json()) as SteamOwnedGamesResponse
