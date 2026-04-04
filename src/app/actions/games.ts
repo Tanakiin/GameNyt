@@ -67,3 +67,72 @@ export async function addManualGameAction(
 
   return { success: 'Game added to your library.' }
 }
+
+export type UpdateGameDetailState = {
+  error?: string
+  success?: boolean
+}
+
+export async function updateUserGameDetailsAction(
+  _prevState: UpdateGameDetailState,
+  formData: FormData
+): Promise<UpdateGameDetailState> {
+  const currentUser = await getCurrentUser()
+
+  if (!currentUser) {
+    return { error: 'You must be signed in.' }
+  }
+
+  const gameId = formData.get('gameId')?.toString()
+  const statusValue = formData.get('status')?.toString()
+  const personalRatingRaw = formData.get('personalRating')?.toString() ?? ''
+  const notesRaw = formData.get('notes')?.toString() ?? ''
+
+  if (!gameId) {
+    return { error: 'Missing game id.' }
+  }
+
+  const allowedStatuses = Object.values(GameStatus)
+  const status = allowedStatuses.includes(statusValue as GameStatus)
+    ? (statusValue as GameStatus)
+    : undefined
+
+  const personalRating =
+    personalRatingRaw.trim() === '' ? null : Number(personalRatingRaw)
+
+  if (
+    personalRating !== null &&
+    (!Number.isFinite(personalRating) || personalRating < 0 || personalRating > 10)
+  ) {
+    return { error: 'Rating must be between 0 and 10.' }
+  }
+
+  const existingUserGame = await prisma.userGame.findFirst({
+    where: {
+      userId: currentUser.id,
+      gameId,
+    },
+  })
+
+  if (!existingUserGame) {
+    return { error: 'Game not found in your library.' }
+  }
+
+  await prisma.userGame.update({
+    where: {
+      id: existingUserGame.id,
+    },
+    data: {
+      ...(status ? { status } : {}),
+      personalRating,
+      notes: notesRaw.trim() || null,
+    },
+  })
+
+  revalidatePath(`/games/${gameId}`)
+  revalidatePath('/library')
+  revalidatePath('/dashboard')
+  revalidatePath('/recommendations')
+
+  return { success: true }
+}
