@@ -2,6 +2,7 @@ import { GameSource, GameStatus, Prisma } from '@prisma/client'
 
 export type LibraryLayout = 'grid' | 'list'
 export type LibrarySort = 'recent' | 'title' | 'playtime' | 'rating' | 'lastPlayed'
+export type GridColumns = '2' | '3' | '4' | '5'
 
 export type LibraryFilters = {
   search: string
@@ -10,9 +11,12 @@ export type LibraryFilters = {
   genre: string
   layout: LibraryLayout
   sort: LibrarySort
+  columns: GridColumns
 }
 
-export function parseLibraryFilters(params: Record<string, string | string[] | undefined>): LibraryFilters {
+export function parseLibraryFilters(
+  params: Record<string, string | string[] | undefined>
+): LibraryFilters {
   const getValue = (key: string) => {
     const value = params[key]
     return Array.isArray(value) ? value[0] ?? '' : value ?? ''
@@ -22,6 +26,7 @@ export function parseLibraryFilters(params: Record<string, string | string[] | u
   const sort = getValue('sort')
   const status = getValue('status')
   const source = getValue('source')
+  const columns = getValue('columns')
 
   return {
     search: getValue('search').trim(),
@@ -49,10 +54,17 @@ export function parseLibraryFilters(params: Record<string, string | string[] | u
       source === 'other'
         ? source
         : 'all',
+    columns:
+      columns === '2' || columns === '3' || columns === '4' || columns === '5'
+        ? columns
+        : '4',
   }
 }
 
-export function buildLibraryWhere(userId: string, filters: LibraryFilters): Prisma.UserGameWhereInput {
+export function buildLibraryWhere(
+  userId: string,
+  filters: LibraryFilters
+): Prisma.UserGameWhereInput {
   const where: Prisma.UserGameWhereInput = {
     userId,
   }
@@ -77,7 +89,9 @@ export function buildLibraryWhere(userId: string, filters: LibraryFilters): Pris
   return where
 }
 
-export function buildLibraryOrderBy(filters: LibraryFilters): Prisma.UserGameOrderByWithRelationInput[] {
+export function buildLibraryOrderBy(
+  filters: LibraryFilters
+): Prisma.UserGameOrderByWithRelationInput[] {
   switch (filters.sort) {
     case 'title':
       return [{ game: { title: 'asc' } }]
@@ -89,5 +103,19 @@ export function buildLibraryOrderBy(filters: LibraryFilters): Prisma.UserGameOrd
       return [{ lastPlayedAt: 'desc' }, { createdAt: 'desc' }]
     default:
       return [{ createdAt: 'desc' }]
+  }
+}
+
+export function getGridClass(columns: GridColumns) {
+  switch (columns) {
+    case '2':
+      return 'grid gap-4 md:grid-cols-2'
+    case '3':
+      return 'grid gap-4 md:grid-cols-2 xl:grid-cols-3'
+    case '5':
+      return 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5'
+    case '4':
+    default:
+      return 'grid gap-4 sm:grid-cols-2 xl:grid-cols-4'
   }
 }

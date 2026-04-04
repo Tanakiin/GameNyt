@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/lib/auth/get-user'
 import {
   buildLibraryOrderBy,
   buildLibraryWhere,
+  getGridClass,
   parseLibraryFilters,
 } from '@/lib/library/query'
-import { LibraryControls } from './library-controls'
+import { LibraryToolbar } from './library-toolbar'
 import { LibraryGridCard } from './library-grid-card'
 import { LibraryListRow } from './library-list-row'
 
@@ -61,28 +62,28 @@ export default async function LibraryPage({
   ).sort((a, b) => a.localeCompare(b))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm text-neutral-500">Library</p>
           <h2 className="text-3xl font-semibold tracking-tight text-white">Your games</h2>
           <p className="mt-2 text-neutral-400">
-            Browse, sort, and filter your library across all sources.
+            Browse your collection with compact controls and customizable layouts.
           </p>
         </div>
 
         <Link
           href="/library/add"
-          className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-4 text-sm font-medium !text-black hover:bg-neutral-200"
+          className="inline-flex h-10 items-center justify-center rounded-xl bg-white px-4 text-sm font-medium !text-black hover:bg-neutral-200"
         >
           Add game
         </Link>
       </div>
 
-      <LibraryControls filters={filters} genres={genres} />
+      <LibraryToolbar filters={filters} genres={genres} />
 
       {userGames.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-700 bg-neutral-900/50 p-8 text-neutral-400">
+        <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/50 p-8 text-neutral-400">
           No games match your current filters.
         </div>
       ) : filters.layout === 'list' ? (
@@ -92,7 +93,7 @@ export default async function LibraryPage({
           ))}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className={getGridClass(filters.columns)}>
           {userGames.map((item) => (
             <LibraryGridCard key={item.id} item={item} />
           ))}

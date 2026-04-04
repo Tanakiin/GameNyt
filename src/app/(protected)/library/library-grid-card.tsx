@@ -11,7 +11,7 @@ type LibraryGridCardProps = {
 export function LibraryGridCard({ item }: LibraryGridCardProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900">
-      <div className="aspect-[16/9] w-full bg-neutral-950">
+      <div className="aspect-[16/10] w-full bg-neutral-950">
         {item.game.coverUrl ? (
           <img
             src={item.game.coverUrl}
@@ -19,36 +19,29 @@ export function LibraryGridCard({ item }: LibraryGridCardProps) {
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-950 text-sm text-neutral-500">
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-950 text-xs text-neutral-500">
             No image
           </div>
         )}
       </div>
 
-      <div className="space-y-3 p-5">
+      <div className="space-y-2 p-4">
         <div>
-          <h3 className="text-lg font-semibold text-white">{item.game.title}</h3>
-          <p className="mt-1 text-sm text-neutral-400">
+          <h3 className="line-clamp-1 text-base font-semibold text-white">{item.game.title}</h3>
+          <p className="mt-1 text-xs text-neutral-400">
             {item.source.toLowerCase()} • {item.status.toLowerCase()}
           </p>
         </div>
 
-        <div className="space-y-1 text-sm text-neutral-400">
-          <p>
-            Playtime: <span className="text-neutral-200">{item.playtimeMinutes} min</span>
-          </p>
-          <p>
-            Rating:{' '}
-            <span className="text-neutral-200">
-              {item.personalRating ?? 'N/A'}
-            </span>
-          </p>
-          <p>
-            Last played:{' '}
-            <span className="text-neutral-200">
-              {item.lastPlayedAt ? new Date(item.lastPlayedAt).toLocaleDateString() : 'Never'}
-            </span>
-          </p>
+        <div className="grid grid-cols-2 gap-2 text-xs text-neutral-400">
+          <div>
+            <p className="text-neutral-500">Playtime</p>
+            <p className="text-neutral-200">{item.playtimeMinutes} min</p>
+          </div>
+          <div>
+            <p className="text-neutral-500">Rating</p>
+            <p className="text-neutral-200">{item.personalRating ?? 'N/A'}</p>
+          </div>
         </div>
       </div>
     </div>
