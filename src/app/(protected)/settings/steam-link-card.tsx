@@ -1,6 +1,3 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-
 type SteamLinkCardProps = {
   linked: boolean
   steamId?: string | null
@@ -23,10 +20,7 @@ export function SteamLinkCard({
 
       <div className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3">
         <p className="text-sm text-neutral-400">
-          Status:{' '}
-          <span className="text-neutral-200">
-            {linked ? 'Linked' : 'Not linked'}
-          </span>
+          Status: <span className="text-neutral-200">{linked ? 'Linked' : 'Not linked'}</span>
         </p>
 
         {steamId ? (
@@ -38,16 +32,17 @@ export function SteamLinkCard({
         {lastSyncedAt ? (
           <p className="mt-2 text-sm text-neutral-400">
             Last synced:{' '}
-            <span className="text-neutral-200">
-              {lastSyncedAt.toLocaleString()}
-            </span>
+            <span className="text-neutral-200">{lastSyncedAt.toLocaleString()}</span>
           </p>
         ) : null}
       </div>
 
-      <Link href="/api/steam/login">
-        <Button>{linked ? 'Relink Steam account' : 'Link Steam account'}</Button>
-      </Link>
+      <a
+        href="/api/steam/login"
+        className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-4 text-sm font-medium text-black transition hover:opacity-90"
+      >
+        {linked ? 'Relink Steam account' : 'Link Steam account'}
+      </a>
     </div>
   )
 }

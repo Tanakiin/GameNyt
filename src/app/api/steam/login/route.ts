@@ -11,9 +11,10 @@ export async function GET() {
   const state = makeStateToken()
   const returnTo = `${appUrl}/api/steam/callback`
   const realm = appUrl
-  const redirectUrl = buildSteamOpenIdUrl(returnTo, realm)
+  const redirectUrl = buildSteamOpenIdUrl(returnTo, realm, state)
 
   const response = NextResponse.redirect(redirectUrl)
+
   response.cookies.set('steam_oauth_state', state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

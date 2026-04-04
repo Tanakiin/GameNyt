@@ -8,6 +8,13 @@ export async function GET(request: NextRequest) {
   const params = url.searchParams
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || url.origin
 
+  const returnedState = params.get('state')
+  const cookieState = request.cookies.get('steam_oauth_state')?.value
+
+  if (!returnedState || !cookieState || returnedState !== cookieState) {
+    return NextResponse.redirect(`${appUrl}/settings?steam_error=invalid_state`)
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -82,5 +89,14 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  return NextResponse.redirect(`${appUrl}/settings?steam_linked=1`)
+  const response = NextResponse.redirect(`${appUrl}/settings?steam_linked=1`)
+  response.cookies.set('steam_oauth_state', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  })
+
+  return response
 }
