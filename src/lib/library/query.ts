@@ -125,7 +125,15 @@ export function buildLibraryOrderBy(
     case 'rating':
       return [{ personalRating: dir }, { game: { rawgRating: dir } }, { createdAt: 'desc' }]
     case 'lastPlayed':
-      return [{ lastPlayedAt: dir }, { createdAt: 'desc' }]
+      return [
+        {
+          lastPlayedAt: {
+            sort: dir,
+            nulls: 'last',
+          },
+        },
+        { createdAt: 'desc' },
+      ]
     case 'recent':
     default:
       return [{ createdAt: dir }]
