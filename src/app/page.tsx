@@ -29,7 +29,7 @@ export default async function HomePage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
               href={user ? '/dashboard' : '/signup'}
-              className="rounded-xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:opacity-90"
+              className="rounded-xl bg-white px-5 py-3 text-sm font-medium !text-black transition hover:bg-neutral-200"
             >
               {user ? 'Go to dashboard' : 'Get started'}
             </Link>

@@ -76,12 +76,13 @@ export function SteamLinkCard({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-3">
-          <Button type="button" onClick={openPopup}>
-            {linked ? 'Relink Steam account' : 'Link Steam account'}
-          </Button>
-          {linked ? <UnlinkSteamButton /> : null}
-      </div>
+      <Button
+          type="button"
+          onClick={openPopup}
+          className="!bg-white !text-black hover:!bg-neutral-200"
+        >
+          {linked ? 'Relink Steam account' : 'Link Steam account'}
+      </Button>
 
       {message ? <p className="text-sm text-emerald-400">{message}</p> : null}
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
