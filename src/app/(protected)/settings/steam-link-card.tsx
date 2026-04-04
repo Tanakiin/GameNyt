@@ -1,5 +1,6 @@
 'use client'
 
+import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { UnlinkSteamButton } from './unlink-steam-button'
 
@@ -76,13 +77,17 @@ export function SteamLinkCard({
         ) : null}
       </div>
 
-      <Button
+      <div className="flex flex-wrap gap-3">
+        <Button
           type="button"
           onClick={openPopup}
           className="!bg-white !text-black hover:!bg-neutral-200"
         >
           {linked ? 'Relink Steam account' : 'Link Steam account'}
-      </Button>
+        </Button>
+
+        {linked ? <UnlinkSteamButton /> : null}
+      </div>
 
       {message ? <p className="text-sm text-emerald-400">{message}</p> : null}
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
