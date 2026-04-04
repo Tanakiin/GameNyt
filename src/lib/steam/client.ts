@@ -1,7 +1,7 @@
 import 'server-only'
 import type { SteamOwnedGamesResponse } from '@/lib/steam/types'
 
-const STEAM_BASE_URL = 'https://partner.steam-api.com'
+const STEAM_BASE_URL = 'https://api.steampowered.com'
 
 function getSteamApiKey() {
   const key = process.env.STEAM_API_KEY
