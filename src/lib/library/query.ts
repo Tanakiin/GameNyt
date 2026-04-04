@@ -53,7 +53,7 @@ export function parseLibraryFilters(
       sort === 'rating' ||
       sort === 'lastPlayed'
         ? sort
-        : 'recent',
+        : 'lastPlayed',
     direction: direction === 'asc' ? 'asc' : 'desc',
     status:
       status === 'backlog' ||
