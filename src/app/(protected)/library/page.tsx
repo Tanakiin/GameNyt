@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/get-user'
+import { requireCurrentUser } from '@/lib/auth/require-current-user'
 import { normalizeNameList } from '@/lib/games/metadata'
 import {
   buildLibraryOrderBy,
@@ -18,12 +18,7 @@ export default async function LibraryPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const currentUser = await getCurrentUser()
-
-  if (!currentUser) {
-    return null
-  }
-
+  const currentUser = await requireCurrentUser()
   const params = (await searchParams) ?? {}
   const filters = parseLibraryFilters(params)
 
@@ -49,9 +44,7 @@ export default async function LibraryPage({
   })
 
   const genres = Array.from(
-    new Set(
-      allUserGames.flatMap((item) => normalizeNameList(item.game.genres))
-    )
+    new Set(allUserGames.flatMap((item) => normalizeNameList(item.game.genres)))
   ).sort((a, b) => a.localeCompare(b))
 
   return (
