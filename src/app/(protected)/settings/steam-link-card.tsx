@@ -37,12 +37,12 @@ export function SteamLinkCard({
         ) : null}
       </div>
 
-      <a
-        href="/api/steam/login"
-        className="inline-flex h-11 items-center justify-center rounded-xl bg-white px-4 text-sm font-medium text-black transition hover:opacity-90"
-      >
-        {linked ? 'Relink Steam account' : 'Link Steam account'}
-      </a>
+        <a
+          href="/api/steam/login"
+          className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-700 bg-neutral-100 px-4 text-sm font-medium text-black transition hover:bg-neutral-200"
+        >
+          {linked ? 'Relink Steam account' : 'Link Steam account'}
+        </a>
     </div>
   )
 }
