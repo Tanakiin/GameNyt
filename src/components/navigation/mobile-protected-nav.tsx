@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/library', label: 'Library' },
+  { href: '/recommendations', label: 'Recommendations' },
   { href: '/settings', label: 'Settings' },
 ]
 
@@ -17,17 +18,6 @@ export function MobileProtectedNav() {
   useEffect(() => {
     setOpen(false)
   }, [pathname])
-
-  useEffect(() => {
-    function handleResize() {
-      if (window.innerWidth >= 768) {
-        setOpen(false)
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   return (
     <div className="md:hidden">
@@ -40,11 +30,10 @@ export function MobileProtectedNav() {
           <button
             type="button"
             onClick={() => setOpen((prev) => !prev)}
-            aria-label={open ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900 text-white"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-700 bg-neutral-900 text-white hover:bg-neutral-800"
           >
-            <span className="sr-only">Menu</span>
             <div className="flex flex-col gap-1.5">
               <span className="block h-0.5 w-4 bg-white" />
               <span className="block h-0.5 w-4 bg-white" />
@@ -57,17 +46,18 @@ export function MobileProtectedNav() {
           <div className="border-t border-neutral-800 bg-neutral-950 px-3 py-3">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                const active =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`)
 
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`rounded-xl px-3 py-3 text-sm font-medium transition ${
+                    className={
                       active
-                        ? 'bg-white text-black'
-                        : 'border border-neutral-800 bg-neutral-900 text-neutral-200 hover:border-neutral-700'
-                    }`}
+                        ? 'rounded-xl border border-cyan-400/30 bg-cyan-400/12 px-3 py-3 text-sm font-medium text-cyan-200'
+                        : 'rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-3 text-sm font-medium text-neutral-200 hover:border-neutral-700 hover:bg-neutral-800'
+                    }
                   >
                     {item.label}
                   </Link>
