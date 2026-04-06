@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -26,10 +28,10 @@ export function ProtectedSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
                   active
-                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20'
-                    : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                    ? 'border-cyan-500/20 bg-cyan-500/15 text-cyan-300'
+                    : 'border-transparent text-neutral-400 hover:border-neutral-800 hover:bg-neutral-900 hover:text-white'
                 }`}
               >
                 {item.label}
