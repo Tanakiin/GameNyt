@@ -103,31 +103,34 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
             </div>
           </div>
 
-          <div className="md:hidden">
+          <div className="min-w-0 md:hidden">
             <h3 className="truncate text-base font-semibold text-white">
               {item.game.title}
             </h3>
 
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
-                {item.source.toLowerCase()}
-              </span>
-              <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
-                {getStatusLabel(item.status)}
-              </span>
-            </div>
-
-            <div className="mt-2 flex items-center gap-4 text-sm text-neutral-400">
-              <div>
+            <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-neutral-400">
+              <p className="min-w-0 truncate">
                 <span className="text-neutral-500">Playtime:</span>{' '}
                 <span className="text-neutral-200">{formatPlaytime(item.playtimeMinutes)}</span>
-              </div>
-              <div>
+              </p>
+              <p className="min-w-0 truncate text-right">
                 <span className="text-neutral-500">Last played:</span>{' '}
                 <span className="text-neutral-200">
                   {item.lastPlayedAt ? new Date(item.lastPlayedAt).toLocaleDateString() : 'Never'}
                 </span>
-              </div>
+              </p>
+              <p className="min-w-0 truncate">
+                <span className="text-neutral-500">Rating:</span>{' '}
+                <span className="text-neutral-200">
+                  {displayRating !== null ? Number(displayRating).toFixed(1) : 'N/A'}
+                </span>
+              </p>
+              <p className="min-w-0 truncate text-right">
+                <span className="text-neutral-500">Added:</span>{' '}
+                <span className="text-neutral-200">
+                  {new Date(item.createdAt).toLocaleDateString()}
+                </span>
+              </p>
             </div>
           </div>
         </div>
