@@ -1,5 +1,5 @@
 import { GameSource, GameStatus, Prisma, type Game, type UserGame } from '@prisma/client'
-import { getPlayTier, normalizeNameList } from '@/lib/games/metadata'
+import { extractPlayModes, getPlayTier, normalizeNameList } from '@/lib/games/metadata'
 
 export type LibraryLayout = 'grid' | 'list'
 export type LibrarySort = 'recent' | 'title' | 'playtime' | 'rating' | 'lastPlayed'
@@ -11,13 +11,27 @@ export type LibraryStatusFilter = 'all' | 'backlog' | 'playing' | 'finished' | '
 export type LibraryFilters = {
   search: string
   status: LibraryStatusFilter
-  source: 'all' | Lowercase<GameSource>
-  genre: string
+  sources: Array<Lowercase<GameSource>>
+  genres: string[]
+  modes: string[]
   tier: LibraryTierFilter
   layout: LibraryLayout
   sort: LibrarySort
   direction: SortDirection
   columns: GridColumns
+}
+
+function parseMultiValue(raw: string) {
+  if (!raw.trim()) return []
+
+  return Array.from(
+    new Set(
+      raw
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  )
 }
 
 export function parseLibraryFilters(
@@ -31,14 +45,19 @@ export function parseLibraryFilters(
   const layout = getValue('layout')
   const sort = getValue('sort')
   const status = getValue('status')
-  const source = getValue('source')
   const columns = getValue('columns')
   const direction = getValue('direction')
   const tier = getValue('tier')
 
+  const parsedSources = parseMultiValue(getValue('source')).filter((source) =>
+    ['steam', 'epic', 'manual', 'console', 'other'].includes(source)
+  ) as Array<Lowercase<GameSource>>
+
   return {
     search: getValue('search').trim(),
-    genre: getValue('genre').trim(),
+    genres: parseMultiValue(getValue('genre')),
+    modes: parseMultiValue(getValue('mode')),
+    sources: parsedSources,
     tier:
       tier === 'untouched' ||
       tier === 'tried' ||
@@ -61,14 +80,6 @@ export function parseLibraryFilters(
       status === 'finished' ||
       status === 'dropped'
         ? status
-        : 'all',
-    source:
-      source === 'steam' ||
-      source === 'epic' ||
-      source === 'manual' ||
-      source === 'console' ||
-      source === 'other'
-        ? source
         : 'all',
     columns:
       columns === '2' || columns === '3' || columns === '4' || columns === '5'
@@ -96,8 +107,10 @@ export function buildLibraryWhere(
     where.status = statusMap[filters.status]
   }
 
-  if (filters.source !== 'all') {
-    where.source = filters.source.toUpperCase() as GameSource
+  if (filters.sources.length > 0) {
+    where.source = {
+      in: filters.sources.map((source) => source.toUpperCase() as GameSource),
+    }
   }
 
   if (filters.search) {
@@ -159,13 +172,27 @@ type LibraryItem = UserGame & {
 }
 
 export function matchesLibraryClientFilters(item: LibraryItem, filters: LibraryFilters) {
-  if (filters.genre) {
-    const genres = normalizeNameList(item.game.genres)
-    const hasGenre = genres.some(
-      (genre) => genre.toLowerCase() === filters.genre.toLowerCase()
+  if (filters.genres.length > 0) {
+    const genres = normalizeNameList(item.game.genres).map((genre) => genre.toLowerCase())
+
+    const hasAnyGenre = filters.genres.some((genre) =>
+      genres.includes(genre.toLowerCase())
     )
 
-    if (!hasGenre) {
+    if (!hasAnyGenre) {
+      return false
+    }
+  }
+
+  if (filters.modes.length > 0) {
+    const rawTags = (item.game as Game & { tags?: unknown }).tags
+    const modes = extractPlayModes(rawTags).map((mode) => mode.toLowerCase())
+
+    const hasAnyMode = filters.modes.some((mode) =>
+      modes.includes(mode.toLowerCase())
+    )
+
+    if (!hasAnyMode) {
       return false
     }
   }

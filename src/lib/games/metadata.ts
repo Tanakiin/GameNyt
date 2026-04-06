@@ -10,6 +10,7 @@ export function normalizeNameList(value: JsonValue | null | undefined): string[]
   return value
     .map((item) => {
       if (typeof item === 'string') return item.trim()
+
       if (
         item &&
         typeof item === 'object' &&
@@ -19,6 +20,7 @@ export function normalizeNameList(value: JsonValue | null | undefined): string[]
       ) {
         return item.name.trim()
       }
+
       if (
         item &&
         typeof item === 'object' &&
@@ -31,6 +33,7 @@ export function normalizeNameList(value: JsonValue | null | undefined): string[]
       ) {
         return item.platform.name.trim()
       }
+
       return null
     })
     .filter((item): item is string => Boolean(item))
@@ -42,6 +45,7 @@ export function normalizeImageList(value: JsonValue | null | undefined): string[
   return value
     .map((item) => {
       if (typeof item === 'string') return item.trim()
+
       if (
         item &&
         typeof item === 'object' &&
@@ -51,6 +55,7 @@ export function normalizeImageList(value: JsonValue | null | undefined): string[
       ) {
         return item.url.trim()
       }
+
       if (
         item &&
         typeof item === 'object' &&
@@ -60,12 +65,15 @@ export function normalizeImageList(value: JsonValue | null | undefined): string[
       ) {
         return item.image.trim()
       }
+
       return null
     })
     .filter((item): item is string => Boolean(item))
 }
 
-export function getGameImageUrls(game: Pick<Game, 'coverUrl' | 'backgroundImageUrl' | 'screenshots'>) {
+export function getGameImageUrls(
+  game: Pick<Game, 'coverUrl' | 'backgroundImageUrl' | 'screenshots'>
+) {
   const images = [
     game.coverUrl ?? null,
     game.backgroundImageUrl ?? null,
@@ -114,6 +122,7 @@ export function getStatusLabel(status: GameStatus | null | undefined) {
 
 export function formatPlaytime(minutes: number | null | undefined) {
   const value = minutes ?? 0
+
   if (value <= 0) return '0h'
 
   const hours = Math.floor(value / 60)
@@ -132,4 +141,34 @@ export function formatDateShort(date: Date | null | undefined) {
     month: 'short',
     day: 'numeric',
   }).format(date)
+}
+
+const modeMatchers: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /\bsingleplayer\b/i, label: 'Singleplayer' },
+  { pattern: /\bonline co-?op\b/i, label: 'Online Co-Op' },
+  { pattern: /\blocal co-?op\b/i, label: 'Local Co-Op' },
+  { pattern: /\bco-?op\b/i, label: 'Co-Op' },
+  { pattern: /\bonline pvp\b/i, label: 'Online PvP' },
+  { pattern: /\blocal multiplayer\b/i, label: 'Local Multiplayer' },
+  { pattern: /\bcouch\b/i, label: 'Couch / Party' },
+  { pattern: /\bshared\/split screen\b/i, label: 'Shared / Split Screen' },
+  { pattern: /\bsplit screen\b/i, label: 'Shared / Split Screen' },
+  { pattern: /\blan co-?op\b/i, label: 'LAN Co-Op' },
+  { pattern: /\blan pvp\b/i, label: 'LAN PvP' },
+  { pattern: /\bmultiplayer\b/i, label: 'Multiplayer' },
+]
+
+export function extractPlayModes(value: unknown): string[] {
+  const names = normalizeNameList(value as JsonValue | null | undefined)
+  const found = new Set<string>()
+
+  for (const name of names) {
+    for (const matcher of modeMatchers) {
+      if (matcher.pattern.test(name)) {
+        found.add(matcher.label)
+      }
+    }
+  }
+
+  return Array.from(found)
 }

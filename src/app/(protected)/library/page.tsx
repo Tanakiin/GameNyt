@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { requireCurrentUser } from '@/lib/auth/require-current-user'
-import { normalizeNameList } from '@/lib/games/metadata'
+import { extractPlayModes, normalizeNameList } from '@/lib/games/metadata'
 import {
   buildLibraryOrderBy,
   buildLibraryWhere,
@@ -47,6 +47,15 @@ export default async function LibraryPage({
     new Set(allUserGames.flatMap((item) => normalizeNameList(item.game.genres)))
   ).sort((a, b) => a.localeCompare(b))
 
+  const modes = Array.from(
+    new Set(
+      allUserGames.flatMap((item) => {
+        const rawTags = (item.game as typeof item.game & { tags?: unknown }).tags
+        return extractPlayModes(rawTags)
+      })
+    )
+  ).sort((a, b) => a.localeCompare(b))
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -66,7 +75,7 @@ export default async function LibraryPage({
         </Link>
       </div>
 
-      <LibraryToolbar filters={filters} genres={genres} />
+      <LibraryToolbar filters={filters} genres={genres} modes={modes} />
 
       {filteredUserGames.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/50 p-8 text-neutral-400">

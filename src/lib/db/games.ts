@@ -15,6 +15,13 @@ type RawgGameDetails = {
   platforms?: Array<{
     platform?: { id?: number; name?: string; slug?: string }
   }>
+  tags?: Array<{ id?: number; name?: string; slug?: string }>
+}
+
+type RawgScreenshotResponse = {
+  results?: Array<{
+    image?: string | null
+  }>
 }
 
 function getRawgApiKey() {
@@ -42,14 +49,11 @@ async function getRawgScreenshots(rawgId: number): Promise<string[]> {
     return []
   }
 
-  const data: { results?: Array<{ image?: string | null }> } = await response.json()
-
+  const data = (await response.json()) as RawgScreenshotResponse
   const results = Array.isArray(data.results) ? data.results : []
 
   return results
-    .map((item: { image?: string | null }) =>
-      typeof item.image === 'string' ? item.image.trim() : null
-    )
+    .map((item) => (typeof item.image === 'string' ? item.image.trim() : null))
     .filter((item): item is string => Boolean(item))
 }
 
@@ -77,6 +81,18 @@ function normalizePlatforms(rawgGame: RawgGameDetails) {
     .filter((platform) => platform.name)
 }
 
+function normalizeTags(rawgGame: RawgGameDetails) {
+  if (!Array.isArray(rawgGame.tags)) return []
+
+  return rawgGame.tags
+    .map((tag) => ({
+      id: tag.id ?? null,
+      name: tag.name ?? '',
+      slug: tag.slug ?? '',
+    }))
+    .filter((tag) => tag.name)
+}
+
 export async function upsertGameFromRawg(rawgId: number) {
   const rawgGame = (await getRawgGameDetails(rawgId)) as RawgGameDetails
   const screenshots = await getRawgScreenshots(rawgId)
@@ -85,13 +101,7 @@ export async function upsertGameFromRawg(rawgId: number) {
   const backgroundImageUrl = rawgGame.background_image_additional ?? null
 
   const dedupedScreenshots = Array.from(
-    new Set(
-      [
-        coverUrl,
-        backgroundImageUrl,
-        ...screenshots,
-      ].filter((item): item is string => Boolean(item))
-    )
+    new Set([coverUrl, backgroundImageUrl, ...screenshots].filter((item): item is string => Boolean(item)))
   )
 
   const payload = {
@@ -106,6 +116,7 @@ export async function upsertGameFromRawg(rawgId: number) {
     rawgRating: typeof rawgGame.rating === 'number' ? rawgGame.rating : null,
     genres: normalizeGenres(rawgGame),
     platforms: normalizePlatforms(rawgGame),
+    tags: normalizeTags(rawgGame),
   }
 
   const existing = await prisma.game.findUnique({

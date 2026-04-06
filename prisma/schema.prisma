@@ -78,6 +78,7 @@ model Game {
   platforms          Json?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
+  tags               Json?
 
   userGames          UserGame[]
 

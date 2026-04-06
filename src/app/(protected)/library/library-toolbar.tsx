@@ -1,17 +1,26 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search, SlidersHorizontal, LayoutGrid, Rows3, Grid2x2, Grid3x3 } from 'lucide-react'
+import {
+  Check,
+  LayoutGrid,
+  Rows3,
+  Search,
+  SlidersHorizontal,
+  Grid2x2,
+  Grid3x3,
+} from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { LibraryFilters } from '@/lib/library/query'
 
 type Props = {
   filters: LibraryFilters
   genres: string[]
+  modes: string[]
 }
 
 type FilterChip = {
-  key: string
+  key: 'search' | 'status' | 'tier' | 'source' | 'genre' | 'mode'
   label: string
   value: string
 }
@@ -33,7 +42,6 @@ const tierOptions = [
 ]
 
 const sourceOptions = [
-  { value: 'all', label: 'All sources' },
   { value: 'steam', label: 'Steam' },
   { value: 'manual', label: 'Manual' },
   { value: 'epic', label: 'Epic' },
@@ -61,7 +69,7 @@ const columnOptions = [
   { value: '5', label: '5', icon: Grid3x3 },
 ]
 
-export function LibraryToolbar({ filters, genres }: Props) {
+export function LibraryToolbar({ filters, genres, modes }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -70,6 +78,14 @@ export function LibraryToolbar({ filters, genres }: Props) {
   const [showLayoutPanel, setShowLayoutPanel] = useState(false)
   const [searchValue, setSearchValue] = useState(filters.search)
 
+  const [draftSort, setDraftSort] = useState(filters.sort)
+  const [draftDirection, setDraftDirection] = useState(filters.direction)
+  const [draftStatus, setDraftStatus] = useState(filters.status)
+  const [draftTier, setDraftTier] = useState(filters.tier)
+  const [draftGenres, setDraftGenres] = useState<string[]>(filters.genres)
+  const [draftSources, setDraftSources] = useState<string[]>(filters.sources)
+  const [draftModes, setDraftModes] = useState<string[]>(filters.modes)
+
   const filterRef = useRef<HTMLDivElement>(null)
   const layoutRef = useRef<HTMLDivElement>(null)
 
@@ -77,32 +93,136 @@ export function LibraryToolbar({ filters, genres }: Props) {
     setSearchValue(filters.search)
   }, [filters.search])
 
-  function updateParam(key: string, value: string) {
+  useEffect(() => {
+    if (!showFilterPanel) return
+
+    setDraftSort(filters.sort)
+    setDraftDirection(filters.direction)
+    setDraftStatus(filters.status)
+    setDraftTier(filters.tier)
+    setDraftGenres(filters.genres)
+    setDraftSources(filters.sources)
+    setDraftModes(filters.modes)
+  }, [showFilterPanel, filters])
+
+  function replaceParams(mutator: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString())
-
-    if (!value || value === 'all') {
-      params.delete(key)
-    } else {
-      params.set(key, value)
-    }
-
-    router.replace(`${pathname}?${params.toString()}`)
+    mutator(params)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  function removeParam(key: string) {
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete(key)
-    router.replace(`${pathname}?${params.toString()}`)
+  function setMultiParam(key: string, values: string[]) {
+    replaceParams((params) => {
+      if (values.length === 0) {
+        params.delete(key)
+      } else {
+        params.set(key, values.join(','))
+      }
+    })
+  }
+
+  function removeSingleChip(chip: FilterChip) {
+    if (chip.key === 'search') {
+      setSearchValue('')
+      replaceParams((params) => {
+        params.delete('search')
+      })
+      return
+    }
+
+    if (chip.key === 'status' || chip.key === 'tier') {
+      replaceParams((params) => {
+        params.delete(chip.key)
+      })
+      return
+    }
+
+    if (chip.key === 'genre') {
+      setMultiParam(
+        'genre',
+        filters.genres.filter((value) => value !== chip.value)
+      )
+      return
+    }
+
+    if (chip.key === 'source') {
+      setMultiParam(
+        'source',
+        filters.sources.filter((value) => value !== chip.value)
+      )
+      return
+    }
+
+    if (chip.key === 'mode') {
+      setMultiParam(
+        'mode',
+        filters.modes.filter((value) => value !== chip.value)
+      )
+    }
   }
 
   function clearAllFilters() {
-    const params = new URLSearchParams(searchParams.toString())
+    setSearchValue('')
+    replaceParams((params) => {
+      ;['search', 'status', 'tier', 'genre', 'source', 'mode'].forEach((key) =>
+        params.delete(key)
+      )
+    })
+    setShowFilterPanel(false)
+  }
 
-    ;['status', 'source', 'genre', 'tier', 'search'].forEach((key) => {
-      params.delete(key)
+  function applyFilterDrafts() {
+    replaceParams((params) => {
+      if (!draftSort || draftSort === 'lastPlayed') {
+        params.delete('sort')
+      } else {
+        params.set('sort', draftSort)
+      }
+
+      if (!draftDirection || draftDirection === 'desc') {
+        params.delete('direction')
+      } else {
+        params.set('direction', draftDirection)
+      }
+
+      if (draftStatus === 'all') {
+        params.delete('status')
+      } else {
+        params.set('status', draftStatus)
+      }
+
+      if (draftTier === 'all') {
+        params.delete('tier')
+      } else {
+        params.set('tier', draftTier)
+      }
+
+      if (draftGenres.length === 0) {
+        params.delete('genre')
+      } else {
+        params.set('genre', draftGenres.join(','))
+      }
+
+      if (draftSources.length === 0) {
+        params.delete('source')
+      } else {
+        params.set('source', draftSources.join(','))
+      }
+
+      if (draftModes.length === 0) {
+        params.delete('mode')
+      } else {
+        params.set('mode', draftModes.join(','))
+      }
     })
 
-    router.replace(`${pathname}?${params.toString()}`)
+    setShowFilterPanel(false)
+  }
+
+  function toggleInArray(current: string[], value: string) {
+    return current.includes(value)
+      ? current.filter((item) => item !== value)
+      : [...current, value]
   }
 
   useEffect(() => {
@@ -114,19 +234,17 @@ export function LibraryToolbar({ filters, genres }: Props) {
         return
       }
 
-      const params = new URLSearchParams(searchParams.toString())
-
-      if (!nextSearch) {
-        params.delete('search')
-      } else {
-        params.set('search', nextSearch)
-      }
-
-      router.replace(`${pathname}?${params.toString()}`)
-    }, 200)
+      replaceParams((params) => {
+        if (!nextSearch) {
+          params.delete('search')
+        } else {
+          params.set('search', nextSearch)
+        }
+      })
+    }, 180)
 
     return () => clearTimeout(timeout)
-  }, [searchValue, pathname, router, searchParams])
+  }, [searchValue])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -166,16 +284,20 @@ export function LibraryToolbar({ filters, genres }: Props) {
       })
     }
 
-    if (filters.genre) {
-      chips.push({ key: 'genre', label: 'Genre', value: filters.genre })
+    for (const genre of filters.genres) {
+      chips.push({ key: 'genre', label: 'Genre', value: genre })
     }
 
-    if (filters.source !== 'all') {
+    for (const source of filters.sources) {
       chips.push({
         key: 'source',
         label: 'Source',
-        value: sourceOptions.find((item) => item.value === filters.source)?.label ?? filters.source,
+        value: sourceOptions.find((item) => item.value === source)?.label ?? source,
       })
+    }
+
+    for (const mode of filters.modes) {
+      chips.push({ key: 'mode', label: 'Mode', value: mode })
     }
 
     return chips
@@ -219,14 +341,14 @@ export function LibraryToolbar({ filters, genres }: Props) {
             </button>
 
             {showFilterPanel ? (
-              <div className="absolute right-0 z-50 mt-3 w-[360px] rounded-3xl border border-white/10 bg-[#0b1016]/95 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur xl:w-[420px]">
-                <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="absolute right-0 z-50 mt-3 w-[330px] rounded-3xl border border-white/10 bg-[#0b1016]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur xl:w-[360px]">
+                <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/80">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-300/80">
                       Sort & Filter
                     </p>
-                    <h3 className="mt-1 text-lg font-semibold text-white">
-                      Shape your library view
+                    <h3 className="mt-1 text-base font-semibold text-white">
+                      Library controls
                     </h3>
                   </div>
 
@@ -234,111 +356,129 @@ export function LibraryToolbar({ filters, genres }: Props) {
                     <button
                       type="button"
                       onClick={clearAllFilters}
-                      className="rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-neutral-300 transition hover:border-white/20 hover:text-white"
+                      className="rounded-full border border-white/10 px-3 py-1 text-[11px] font-medium text-neutral-300 transition hover:border-white/20 hover:text-white"
                     >
-                      Clear all
+                      Reset
                     </button>
                   ) : null}
                 </div>
 
-                <div className="grid gap-4">
-                  <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                      Ordering
-                    </p>
-
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <CompactSection title="Ordering">
+                    <div className="grid gap-2 sm:grid-cols-2">
                       <LabeledSelect
                         label="Sort by"
-                        value={filters.sort}
-                        onChange={(value) => updateParam('sort', value)}
+                        value={draftSort}
+                        onChange={setDraftSort}
                         options={sortOptions}
                       />
                       <LabeledSelect
                         label="Direction"
-                        value={filters.direction}
-                        onChange={(value) => updateParam('direction', value)}
+                        value={draftDirection}
+                        onChange={setDraftDirection}
                         options={directionOptions}
                       />
                     </div>
-                  </section>
+                  </CompactSection>
 
-                  <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                      Play state
-                    </p>
-
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <CompactSection title="State">
+                    <div className="grid gap-2 sm:grid-cols-2">
                       <LabeledSelect
                         label="Manual status"
-                        value={filters.status}
-                        onChange={(value) => updateParam('status', value)}
+                        value={draftStatus}
+                        onChange={setDraftStatus}
                         options={statusOptions}
                       />
                       <LabeledSelect
                         label="Play level"
-                        value={filters.tier}
-                        onChange={(value) => updateParam('tier', value)}
+                        value={draftTier}
+                        onChange={setDraftTier}
                         options={tierOptions}
                       />
                     </div>
-                  </section>
+                  </CompactSection>
 
-                  <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                      Metadata
-                    </p>
+                  <CompactSection title="Sources">
+                    <PillGrid
+                      options={sourceOptions}
+                      selected={draftSources}
+                      onToggle={(value) => setDraftSources((current) => toggleInArray(current, value))}
+                    />
+                  </CompactSection>
 
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <LabeledSelect
-                        label="Genre"
-                        value={filters.genre}
-                        onChange={(value) => updateParam('genre', value)}
-                        options={[
-                          { value: '', label: 'All genres' },
-                          ...genres.map((genre) => ({ value: genre, label: genre })),
-                        ]}
+                  <CompactSection title="Genres" scroll>
+                    <PillGrid
+                      options={genres.map((genre) => ({ value: genre, label: genre }))}
+                      selected={draftGenres}
+                      onToggle={(value) => setDraftGenres((current) => toggleInArray(current, value))}
+                    />
+                  </CompactSection>
+
+                  {modes.length > 0 ? (
+                    <CompactSection title="Play modes">
+                      <PillGrid
+                        options={modes.map((mode) => ({ value: mode, label: mode }))}
+                        selected={draftModes}
+                        onToggle={(value) => setDraftModes((current) => toggleInArray(current, value))}
                       />
-                      <LabeledSelect
-                        label="Source"
-                        value={filters.source}
-                        onChange={(value) => updateParam('source', value)}
-                        options={sourceOptions}
-                      />
-                    </div>
-                  </section>
+                    </CompactSection>
+                  ) : null}
 
-                  <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                        Active filters
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        {activeChips.length === 0 ? 'None applied' : `${activeChips.length} active`}
-                      </p>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {activeChips.length === 0 ? (
+                  <CompactSection title="Queued filters">
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        ...draftSources.map((value) => ({ key: 'source', label: value })),
+                        ...draftGenres.map((value) => ({ key: 'genre', label: value })),
+                        ...draftModes.map((value) => ({ key: 'mode', label: value })),
+                        ...(draftStatus !== 'all'
+                          ? [{ key: 'status', label: statusOptions.find((x) => x.value === draftStatus)?.label ?? draftStatus }]
+                          : []),
+                        ...(draftTier !== 'all'
+                          ? [{ key: 'tier', label: tierOptions.find((x) => x.value === draftTier)?.label ?? draftTier }]
+                          : []),
+                      ].length === 0 ? (
                         <span className="rounded-full border border-dashed border-white/10 px-3 py-1.5 text-xs text-neutral-500">
-                          Add filters to narrow your library
+                          Nothing queued
                         </span>
                       ) : (
-                        activeChips.map((chip) => (
-                          <button
-                            key={`${chip.key}-${chip.value}`}
-                            type="button"
-                            onClick={() => removeParam(chip.key)}
-                            className="inline-flex items-center gap-2 rounded-full border border-cyan-500/15 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 transition hover:border-cyan-400/30 hover:bg-cyan-500/15"
+                        [
+                          ...draftSources.map((value) => ({ key: 'source', label: value })),
+                          ...draftGenres.map((value) => ({ key: 'genre', label: value })),
+                          ...draftModes.map((value) => ({ key: 'mode', label: value })),
+                          ...(draftStatus !== 'all'
+                            ? [{ key: 'status', label: statusOptions.find((x) => x.value === draftStatus)?.label ?? draftStatus }]
+                            : []),
+                          ...(draftTier !== 'all'
+                            ? [{ key: 'tier', label: tierOptions.find((x) => x.value === draftTier)?.label ?? draftTier }]
+                            : []),
+                        ].map((item, index) => (
+                          <span
+                            key={`${item.key}-${item.label}-${index}`}
+                            className="rounded-full border border-cyan-500/15 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200"
                           >
-                            <span className="text-cyan-300/80">{chip.label}:</span>
-                            <span>{chip.value}</span>
-                            <span className="text-cyan-300/70">×</span>
-                          </button>
+                            {item.label}
+                          </span>
                         ))
                       )}
                     </div>
-                  </section>
+                  </CompactSection>
+                </div>
+
+                <div className="mt-3 flex items-center justify-end gap-2 border-t border-white/8 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowFilterPanel(false)}
+                    className="rounded-2xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:border-white/20 hover:text-white"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applyFilterDrafts}
+                    className="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
+                  >
+                    Apply
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -358,26 +498,22 @@ export function LibraryToolbar({ filters, genres }: Props) {
             </button>
 
             {showLayoutPanel ? (
-              <div className="absolute right-0 z-50 mt-3 w-[280px] rounded-3xl border border-white/10 bg-[#0b1016]/95 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur">
+              <div className="absolute right-0 z-50 mt-3 w-[250px] rounded-3xl border border-white/10 bg-[#0b1016]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-cyan-300/80">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-300/80">
                     Layout
                   </p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">
+                  <h3 className="mt-1 text-base font-semibold text-white">
                     Tune the view
                   </h3>
                 </div>
 
-                <div className="mt-4 space-y-4">
-                  <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                      View mode
-                    </p>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 space-y-3">
+                  <CompactSection title="View mode">
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => updateParam('layout', 'grid')}
+                        onClick={() => replaceParams((params) => params.set('layout', 'grid'))}
                         className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
                           filters.layout === 'grid'
                             ? 'border-cyan-500/25 bg-cyan-500/12 text-cyan-200'
@@ -392,7 +528,7 @@ export function LibraryToolbar({ filters, genres }: Props) {
 
                       <button
                         type="button"
-                        onClick={() => updateParam('layout', 'list')}
+                        onClick={() => replaceParams((params) => params.set('layout', 'list'))}
                         className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
                           filters.layout === 'list'
                             ? 'border-cyan-500/25 bg-cyan-500/12 text-cyan-200'
@@ -405,14 +541,10 @@ export function LibraryToolbar({ filters, genres }: Props) {
                         </div>
                       </button>
                     </div>
-                  </section>
+                  </CompactSection>
 
-                  <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-                      Grid density
-                    </p>
-
-                    <div className="mt-3 grid grid-cols-4 gap-2">
+                  <CompactSection title="Grid density">
+                    <div className="grid grid-cols-4 gap-2">
                       {columnOptions.map((option) => {
                         const Icon = option.icon
                         const active = filters.columns === option.value
@@ -421,7 +553,7 @@ export function LibraryToolbar({ filters, genres }: Props) {
                           <button
                             key={option.value}
                             type="button"
-                            onClick={() => updateParam('columns', option.value)}
+                            onClick={() => replaceParams((params) => params.set('columns', option.value))}
                             className={`rounded-2xl border px-2 py-3 text-sm font-medium transition ${
                               active
                                 ? 'border-cyan-500/25 bg-cyan-500/12 text-cyan-200'
@@ -436,7 +568,7 @@ export function LibraryToolbar({ filters, genres }: Props) {
                         )
                       })}
                     </div>
-                  </section>
+                  </CompactSection>
                 </div>
               </div>
             ) : null}
@@ -448,9 +580,9 @@ export function LibraryToolbar({ filters, genres }: Props) {
         <div className="flex flex-wrap gap-2">
           {activeChips.map((chip) => (
             <button
-              key={`${chip.key}-${chip.value}-bar`}
+              key={`${chip.key}-${chip.value}`}
               type="button"
-              onClick={() => removeParam(chip.key)}
+              onClick={() => removeSingleChip(chip)}
               className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:border-white/20 hover:text-white"
             >
               <span className="text-neutral-500">{chip.label}</span>
@@ -464,6 +596,25 @@ export function LibraryToolbar({ filters, genres }: Props) {
   )
 }
 
+function CompactSection({
+  title,
+  children,
+  scroll = false,
+}: {
+  title: string
+  children: React.ReactNode
+  scroll?: boolean
+}) {
+  return (
+    <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-500">
+        {title}
+      </p>
+      <div className={scroll ? 'mt-3 max-h-32 overflow-y-auto pr-1' : 'mt-3'}>{children}</div>
+    </section>
+  )
+}
+
 function LabeledSelect({
   label,
   value,
@@ -472,18 +623,18 @@ function LabeledSelect({
 }: {
   label: string
   value: string
-  onChange: (value: string) => void
+  onChange: (value: any) => void
   options: Array<{ value: string; label: string }>
 }) {
   return (
-    <label className="flex flex-col gap-2">
-      <span className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-neutral-500">
         {label}
       </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 rounded-2xl border border-white/10 bg-neutral-950/70 px-3 text-sm text-white outline-none transition hover:border-white/15 focus:border-cyan-500/30"
+        className="h-10 rounded-2xl border border-white/10 bg-neutral-950/70 px-3 text-sm text-white outline-none transition hover:border-white/15 focus:border-cyan-500/30"
       >
         {options.map((option) => (
           <option key={`${label}-${option.value || 'empty'}`} value={option.value}>
@@ -492,5 +643,39 @@ function LabeledSelect({
         ))}
       </select>
     </label>
+  )
+}
+
+function PillGrid({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: Array<{ value: string; label: string }>
+  selected: string[]
+  onToggle: (value: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option) => {
+        const active = selected.includes(option.value)
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onToggle(option.value)}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              active
+                ? 'border-cyan-500/20 bg-cyan-500/12 text-cyan-200'
+                : 'border-white/8 bg-white/[0.03] text-neutral-300 hover:border-white/15 hover:text-white'
+            }`}
+          >
+            {active ? <Check size={12} /> : null}
+            <span>{option.label}</span>
+          </button>
+        )
+      })}
+    </div>
   )
 }
