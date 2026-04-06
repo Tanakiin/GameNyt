@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
+  --background: #05070a;
   --foreground: #f5f5f5;
 }
 
 html,
 body {
-  background: var(--background);
+  background: radial-gradient(circle at 20% 10%, rgba(0, 255, 200, 0.05), transparent 40%),
+              radial-gradient(circle at 80% 30%, rgba(0, 100, 255, 0.05), transparent 40%),
+              var(--background);
   color: var(--foreground);
 }
 

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { headers } from 'next/headers'
 import { requireCurrentUser } from '@/lib/auth/require-current-user'
 import { MobileProtectedNav } from '@/components/navigation/mobile-protected-nav'
 import { ProtectedSidebar } from '@/components/navigation/protected-sidebar'
@@ -11,18 +10,17 @@ export default async function ProtectedLayout({
 }) {
   await requireCurrentUser()
 
-  const headersList = await headers()
-  const pathname = headersList.get('x-current-path') ?? ''
-
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-950 via-[#0a0f14] to-black text-white">
       <MobileProtectedNav />
 
-      <div className="mx-auto flex min-h-screen max-w-screen-2xl">
-        <ProtectedSidebar pathname={pathname} />
+      <div className="flex min-h-screen">
+        <ProtectedSidebar />
 
-        <main className="min-w-0 flex-1 px-4 py-5 md:px-8 md:py-8">
-          {children}
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          <div className="mx-auto w-full max-w-[1400px]">
+            {children}
+          </div>
         </main>
       </div>
     </div>
