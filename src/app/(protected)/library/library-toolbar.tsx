@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import {
   Check,
+  ChevronDown,
   LayoutGrid,
   Rows3,
   Search,
   SlidersHorizontal,
   Grid2x2,
   Grid3x3,
+  X,
 } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { LibraryFilters } from '@/lib/library/query'
@@ -73,6 +75,7 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
 
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const [showLayoutPanel, setShowLayoutPanel] = useState(false)
@@ -86,6 +89,9 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
   const [draftSources, setDraftSources] = useState<string[]>(filters.sources)
   const [draftModes, setDraftModes] = useState<string[]>(filters.modes)
 
+  const [draftLayout, setDraftLayout] = useState(filters.layout)
+  const [draftColumns, setDraftColumns] = useState(filters.columns)
+
   const filterRef = useRef<HTMLDivElement>(null)
   const layoutRef = useRef<HTMLDivElement>(null)
 
@@ -95,7 +101,6 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
 
   useEffect(() => {
     if (!showFilterPanel) return
-
     setDraftSort(filters.sort)
     setDraftDirection(filters.direction)
     setDraftStatus(filters.status)
@@ -105,20 +110,26 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
     setDraftModes(filters.modes)
   }, [showFilterPanel, filters])
 
+  useEffect(() => {
+    if (!showLayoutPanel) return
+    setDraftLayout(filters.layout)
+    setDraftColumns(filters.columns)
+  }, [showLayoutPanel, filters.layout, filters.columns])
+
   function replaceParams(mutator: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString())
     mutator(params)
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    })
   }
 
-  function setMultiParam(key: string, values: string[]) {
-    replaceParams((params) => {
-      if (values.length === 0) {
-        params.delete(key)
-      } else {
-        params.set(key, values.join(','))
-      }
-    })
+  function setMultiParam(params: URLSearchParams, key: string, values: string[]) {
+    if (values.length === 0) {
+      params.delete(key)
+    } else {
+      params.set(key, values.join(','))
+    }
   }
 
   function removeSingleChip(chip: FilterChip) {
@@ -138,26 +149,35 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
     }
 
     if (chip.key === 'genre') {
-      setMultiParam(
-        'genre',
-        filters.genres.filter((value) => value !== chip.value)
-      )
+      replaceParams((params) => {
+        setMultiParam(
+          params,
+          'genre',
+          filters.genres.filter((value) => value !== chip.value)
+        )
+      })
       return
     }
 
     if (chip.key === 'source') {
-      setMultiParam(
-        'source',
-        filters.sources.filter((value) => value !== chip.value)
-      )
+      replaceParams((params) => {
+        setMultiParam(
+          params,
+          'source',
+          filters.sources.filter((value) => value !== chip.value)
+        )
+      })
       return
     }
 
     if (chip.key === 'mode') {
-      setMultiParam(
-        'mode',
-        filters.modes.filter((value) => value !== chip.value)
-      )
+      replaceParams((params) => {
+        setMultiParam(
+          params,
+          'mode',
+          filters.modes.filter((value) => value !== chip.value)
+        )
+      })
     }
   }
 
@@ -197,26 +217,32 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
         params.set('tier', draftTier)
       }
 
-      if (draftGenres.length === 0) {
-        params.delete('genre')
-      } else {
-        params.set('genre', draftGenres.join(','))
-      }
-
-      if (draftSources.length === 0) {
-        params.delete('source')
-      } else {
-        params.set('source', draftSources.join(','))
-      }
-
-      if (draftModes.length === 0) {
-        params.delete('mode')
-      } else {
-        params.set('mode', draftModes.join(','))
-      }
+      setMultiParam(params, 'genre', draftGenres)
+      setMultiParam(params, 'source', draftSources)
+      setMultiParam(params, 'mode', draftModes)
     })
 
     setShowFilterPanel(false)
+  }
+
+  function applyLayoutDrafts() {
+    replaceParams((params) => {
+      if (draftLayout === 'grid') {
+        params.delete('layout')
+      } else {
+        params.set('layout', draftLayout)
+      }
+
+      if (draftLayout === 'list') {
+        params.delete('columns')
+      } else if (draftColumns === '4') {
+        params.delete('columns')
+      } else {
+        params.set('columns', draftColumns)
+      }
+    })
+
+    setShowLayoutPanel(false)
   }
 
   function toggleInArray(current: string[], value: string) {
@@ -230,9 +256,7 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
       const currentSearch = searchParams.get('search') ?? ''
       const nextSearch = searchValue.trim()
 
-      if (currentSearch === nextSearch) {
-        return
-      }
+      if (currentSearch === nextSearch) return
 
       replaceParams((params) => {
         if (!nextSearch) {
@@ -251,7 +275,6 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
         setShowFilterPanel(false)
       }
-
       if (layoutRef.current && !layoutRef.current.contains(event.target as Node)) {
         setShowLayoutPanel(false)
       }
@@ -317,7 +340,7 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
             value={searchValue}
             onChange={(event) => setSearchValue(event.target.value)}
             placeholder="Search your library"
-            className="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] pl-10 pr-4 text-sm text-white outline-none ring-0 transition placeholder:text-neutral-500 hover:border-white/15 focus:border-cyan-500/30 focus:bg-white/[0.06]"
+            className="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-neutral-500 hover:border-white/15 focus:border-cyan-500/30 focus:bg-white/[0.06]"
           />
         </div>
 
@@ -341,14 +364,14 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
             </button>
 
             {showFilterPanel ? (
-              <div className="absolute right-0 z-50 mt-3 w-[330px] rounded-3xl border border-white/10 bg-[#0b1016]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur xl:w-[360px]">
+              <div className="absolute right-0 z-50 mt-3 w-[320px] rounded-3xl border border-white/10 bg-[#0b1016]/96 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur xl:w-[344px]">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-300/80">
                       Sort & Filter
                     </p>
-                    <h3 className="mt-1 text-base font-semibold text-white">
-                      Library controls
+                    <h3 className="mt-1 text-sm font-semibold text-white">
+                      Refine the view
                     </h3>
                   </div>
 
@@ -356,14 +379,14 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
                     <button
                       type="button"
                       onClick={clearAllFilters}
-                      className="rounded-full border border-white/10 px-3 py-1 text-[11px] font-medium text-neutral-300 transition hover:border-white/20 hover:text-white"
+                      className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-medium text-neutral-300 transition hover:border-white/20 hover:text-white"
                     >
                       Reset
                     </button>
                   ) : null}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <CompactSection title="Ordering">
                     <div className="grid gap-2 sm:grid-cols-2">
                       <LabeledSelect
@@ -399,15 +422,17 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
                   </CompactSection>
 
                   <CompactSection title="Sources">
-                    <PillGrid
+                    <MultiSelectDropdown
+                      label="Choose sources"
                       options={sourceOptions}
                       selected={draftSources}
                       onToggle={(value) => setDraftSources((current) => toggleInArray(current, value))}
                     />
                   </CompactSection>
 
-                  <CompactSection title="Genres" scroll>
-                    <PillGrid
+                  <CompactSection title="Genres">
+                    <MultiSelectDropdown
+                      label="Choose genres"
                       options={genres.map((genre) => ({ value: genre, label: genre }))}
                       selected={draftGenres}
                       onToggle={(value) => setDraftGenres((current) => toggleInArray(current, value))}
@@ -416,7 +441,8 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
 
                   {modes.length > 0 ? (
                     <CompactSection title="Play modes">
-                      <PillGrid
+                      <MultiSelectDropdown
+                        label="Choose play modes"
                         options={modes.map((mode) => ({ value: mode, label: mode }))}
                         selected={draftModes}
                         onToggle={(value) => setDraftModes((current) => toggleInArray(current, value))}
@@ -425,7 +451,7 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
                   ) : null}
 
                   <CompactSection title="Queued filters">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {[
                         ...draftSources.map((value) => ({ key: 'source', label: value })),
                         ...draftGenres.map((value) => ({ key: 'genre', label: value })),
@@ -454,7 +480,7 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
                         ].map((item, index) => (
                           <span
                             key={`${item.key}-${item.label}-${index}`}
-                            className="rounded-full border border-cyan-500/15 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200"
+                            className="rounded-full border border-cyan-500/15 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-medium text-cyan-200"
                           >
                             {item.label}
                           </span>
@@ -475,7 +501,8 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
                   <button
                     type="button"
                     onClick={applyFilterDrafts}
-                    className="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
+                    disabled={isPending}
+                    className="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90 disabled:opacity-60"
                   >
                     Apply
                   </button>
@@ -498,24 +525,24 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
             </button>
 
             {showLayoutPanel ? (
-              <div className="absolute right-0 z-50 mt-3 w-[250px] rounded-3xl border border-white/10 bg-[#0b1016]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur">
+              <div className="absolute right-0 z-50 mt-3 w-[232px] rounded-3xl border border-white/10 bg-[#0b1016]/96 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-300/80">
                     Layout
                   </p>
-                  <h3 className="mt-1 text-base font-semibold text-white">
+                  <h3 className="mt-1 text-sm font-semibold text-white">
                     Tune the view
                   </h3>
                 </div>
 
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 space-y-2.5">
                   <CompactSection title="View mode">
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => replaceParams((params) => params.set('layout', 'grid'))}
+                        onClick={() => setDraftLayout('grid')}
                         className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
-                          filters.layout === 'grid'
+                          draftLayout === 'grid'
                             ? 'border-cyan-500/25 bg-cyan-500/12 text-cyan-200'
                             : 'border-white/8 bg-white/[0.03] text-neutral-300 hover:border-white/15 hover:text-white'
                         }`}
@@ -528,9 +555,9 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
 
                       <button
                         type="button"
-                        onClick={() => replaceParams((params) => params.set('layout', 'list'))}
+                        onClick={() => setDraftLayout('list')}
                         className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
-                          filters.layout === 'list'
+                          draftLayout === 'list'
                             ? 'border-cyan-500/25 bg-cyan-500/12 text-cyan-200'
                             : 'border-white/8 bg-white/[0.03] text-neutral-300 hover:border-white/15 hover:text-white'
                         }`}
@@ -543,32 +570,52 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
                     </div>
                   </CompactSection>
 
-                  <CompactSection title="Grid density">
-                    <div className="grid grid-cols-4 gap-2">
-                      {columnOptions.map((option) => {
-                        const Icon = option.icon
-                        const active = filters.columns === option.value
+                  {draftLayout === 'grid' ? (
+                    <CompactSection title="Grid density">
+                      <div className="grid grid-cols-4 gap-2">
+                        {columnOptions.map((option) => {
+                          const Icon = option.icon
+                          const active = draftColumns === option.value
 
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => replaceParams((params) => params.set('columns', option.value))}
-                            className={`rounded-2xl border px-2 py-3 text-sm font-medium transition ${
-                              active
-                                ? 'border-cyan-500/25 bg-cyan-500/12 text-cyan-200'
-                                : 'border-white/8 bg-white/[0.03] text-neutral-300 hover:border-white/15 hover:text-white'
-                            }`}
-                          >
-                            <div className="flex flex-col items-center gap-1.5">
-                              <Icon size={15} />
-                              <span>{option.label}</span>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </CompactSection>
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setDraftColumns(option.value as typeof draftColumns)}
+                              className={`rounded-2xl border px-2 py-3 text-sm font-medium transition ${
+                                active
+                                  ? 'border-cyan-500/25 bg-cyan-500/12 text-cyan-200'
+                                  : 'border-white/8 bg-white/[0.03] text-neutral-300 hover:border-white/15 hover:text-white'
+                              }`}
+                            >
+                              <div className="flex flex-col items-center gap-1.5">
+                                <Icon size={15} />
+                                <span>{option.label}</span>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </CompactSection>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 flex items-center justify-end gap-2 border-t border-white/8 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowLayoutPanel(false)}
+                    className="rounded-2xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:border-white/20 hover:text-white"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applyLayoutDrafts}
+                    disabled={isPending}
+                    className="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90 disabled:opacity-60"
+                  >
+                    Apply
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -587,7 +634,7 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
             >
               <span className="text-neutral-500">{chip.label}</span>
               <span>{chip.value}</span>
-              <span className="text-neutral-500">×</span>
+              <X size={12} className="text-neutral-500" />
             </button>
           ))}
         </div>
@@ -599,18 +646,16 @@ export function LibraryToolbar({ filters, genres, modes }: Props) {
 function CompactSection({
   title,
   children,
-  scroll = false,
 }: {
   title: string
   children: React.ReactNode
-  scroll?: boolean
 }) {
   return (
     <section className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
       <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-500">
         {title}
       </p>
-      <div className={scroll ? 'mt-3 max-h-32 overflow-y-auto pr-1' : 'mt-3'}>{children}</div>
+      <div className="mt-2.5">{children}</div>
     </section>
   )
 }
@@ -646,36 +691,78 @@ function LabeledSelect({
   )
 }
 
-function PillGrid({
+function MultiSelectDropdown({
+  label,
   options,
   selected,
   onToggle,
 }: {
+  label: string
   options: Array<{ value: string; label: string }>
   selected: string[]
   onToggle: (value: string) => void
 }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => {
-        const active = selected.includes(option.value)
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-        return (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onToggle(option.value)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-              active
-                ? 'border-cyan-500/20 bg-cyan-500/12 text-cyan-200'
-                : 'border-white/8 bg-white/[0.03] text-neutral-300 hover:border-white/15 hover:text-white'
-            }`}
-          >
-            {active ? <Check size={12} /> : null}
-            <span>{option.label}</span>
-          </button>
-        )
-      })}
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const preview =
+    selected.length === 0
+      ? label
+      : selected.length <= 2
+        ? selected.join(', ')
+        : `${selected.length} selected`
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex h-10 w-full items-center justify-between rounded-2xl border border-white/10 bg-neutral-950/70 px-3 text-left text-sm text-white transition hover:border-white/15"
+      >
+        <span className="truncate">{preview}</span>
+        <ChevronDown size={15} className="text-neutral-400" />
+      </button>
+
+      {open ? (
+        <div className="absolute left-0 right-0 z-20 mt-2 max-h-56 overflow-y-auto rounded-2xl border border-white/10 bg-[#0b1016] p-2 shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
+          {options.length === 0 ? (
+            <div className="px-2 py-2 text-xs text-neutral-500">No options available</div>
+          ) : (
+            <div className="space-y-1">
+              {options.map((option) => {
+                const active = selected.includes(option.value)
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onToggle(option.value)}
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
+                      active
+                        ? 'bg-cyan-500/12 text-cyan-200'
+                        : 'text-neutral-300 hover:bg-white/[0.04] hover:text-white'
+                    }`}
+                  >
+                    <span className="truncate">{option.label}</span>
+                    {active ? <Check size={14} /> : null}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }
