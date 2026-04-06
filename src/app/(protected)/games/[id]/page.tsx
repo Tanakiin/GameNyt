@@ -115,7 +115,16 @@ export default async function GameDetailPage({ params }: PageProps) {
               <InfoCard label="RAWG rating" value={userGame.game.rawgRating?.toString() ?? 'N/A'} />
               <InfoCard label="Your rating" value={userGame.personalRating?.toString() ?? 'N/A'} />
               <InfoCard label="Playtime" value={formatPlaytime(userGame.playtimeMinutes)} />
-              <InfoCard label="Last played" value={formatDateShort(userGame.lastPlayedAt)} />
+              <InfoCard
+                  label="Last played"
+                  value={
+                    userGame.lastPlayedAt
+                      ? formatDateShort(userGame.lastPlayedAt)
+                      : userGame.playtimeMinutes > 0
+                        ? 'Played before'
+                        : 'Never'
+                  }
+                />
               <InfoCard label="Source" value={userGame.source} />
             </div>
 

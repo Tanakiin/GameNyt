@@ -83,7 +83,9 @@ export function LibraryGridCard({ item }: LibraryGridCardProps) {
             <p className="text-neutral-200">
               {item.lastPlayedAt
                 ? new Date(item.lastPlayedAt).toLocaleDateString()
-                : 'Never'}
+                : item.playtimeMinutes > 0
+                  ? 'Played before'
+                  : 'Never'}
             </p>
           </div>
         </div>

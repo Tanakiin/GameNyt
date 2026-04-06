@@ -96,9 +96,15 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
                 value={displayRating !== null ? Number(displayRating).toFixed(1) : 'N/A'}
               />
               <Metric
-                label="Last played"
-                value={item.lastPlayedAt ? new Date(item.lastPlayedAt).toLocaleDateString() : 'Never'}
-              />
+                  label="Last played"
+                  value={
+                    item.lastPlayedAt
+                      ? new Date(item.lastPlayedAt).toLocaleDateString()
+                      : item.playtimeMinutes > 0
+                        ? 'Played before'
+                        : 'Never'
+                  }
+                />
               <Metric label="Added" value={new Date(item.createdAt).toLocaleDateString()} />
             </div>
           </div>
@@ -116,7 +122,11 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
               <p className="min-w-0 truncate text-right">
                 <span className="text-neutral-500">Last played:</span>{' '}
                 <span className="text-neutral-200">
-                  {item.lastPlayedAt ? new Date(item.lastPlayedAt).toLocaleDateString() : 'Never'}
+                  {item.lastPlayedAt
+                      ? new Date(item.lastPlayedAt).toLocaleDateString()
+                      : item.playtimeMinutes > 0
+                        ? 'Played before'
+                        : 'Never'}
                 </span>
               </p>
               <p className="min-w-0 truncate">
