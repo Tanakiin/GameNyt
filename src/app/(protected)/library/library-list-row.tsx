@@ -24,17 +24,17 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
     : null
   const images = getGameImageUrls(item.game)
   const primaryImage = images[0] ?? null
-  const genres = normalizeNameList(item.game.genres).slice(0, 3)
+  const genres = normalizeNameList(item.game.genres).slice(0, 2)
   const platforms = normalizeNameList(item.game.platforms).slice(0, 2)
   const playTier = getPlayTier(item.playtimeMinutes)
 
   return (
     <Link
       href={`/games/${item.gameId}`}
-      className="group block rounded-2xl border border-neutral-800/90 bg-neutral-950/70 p-3 transition hover:border-neutral-700 hover:bg-neutral-950/90"
+      className="group block rounded-2xl border border-neutral-800 bg-neutral-900/80 p-3 transition hover:border-neutral-700 hover:bg-neutral-900"
     >
-      <div className="flex gap-3">
-        <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-neutral-900 sm:h-24 sm:w-36">
+      <div className="flex items-center gap-3">
+        <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-neutral-950 sm:h-20 sm:w-32">
           {primaryImage ? (
             <img
               src={primaryImage}
@@ -49,24 +49,24 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-semibold text-white sm:text-lg">
-                {item.game.title}
-              </h3>
+          <div className="hidden items-center justify-between gap-4 md:flex">
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h3 className="truncate text-lg font-semibold text-white">
+                  {item.game.title}
+                </h3>
 
-              <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px] text-neutral-300">
-                <span className="rounded-full border border-neutral-700 px-2 py-0.5">
+                <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
                   {item.source.toLowerCase()}
                 </span>
-                <span className="rounded-full border border-neutral-700 px-2 py-0.5">
+                <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
                   {getStatusLabel(item.status)}
                 </span>
-                <span className="rounded-full border border-neutral-700 px-2 py-0.5">
+                <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
                   {getPlayTierLabel(playTier)}
                 </span>
                 {releaseYear ? (
-                  <span className="rounded-full border border-neutral-700 px-2 py-0.5">
+                  <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
                     {releaseYear}
                   </span>
                 ) : null}
@@ -89,7 +89,7 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
               </div>
             </div>
 
-            <div className="mt-1 grid grid-cols-2 gap-2 xl:mt-0 xl:w-[360px] xl:grid-cols-4">
+            <div className="grid shrink-0 grid-cols-4 gap-2">
               <Metric label="Playtime" value={formatPlaytime(item.playtimeMinutes)} />
               <Metric
                 label="Rating"
@@ -102,6 +102,34 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
               <Metric label="Added" value={new Date(item.createdAt).toLocaleDateString()} />
             </div>
           </div>
+
+          <div className="md:hidden">
+            <h3 className="truncate text-base font-semibold text-white">
+              {item.game.title}
+            </h3>
+
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
+                {item.source.toLowerCase()}
+              </span>
+              <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300">
+                {getStatusLabel(item.status)}
+              </span>
+            </div>
+
+            <div className="mt-2 flex items-center gap-4 text-sm text-neutral-400">
+              <div>
+                <span className="text-neutral-500">Playtime:</span>{' '}
+                <span className="text-neutral-200">{formatPlaytime(item.playtimeMinutes)}</span>
+              </div>
+              <div>
+                <span className="text-neutral-500">Last played:</span>{' '}
+                <span className="text-neutral-200">
+                  {item.lastPlayedAt ? new Date(item.lastPlayedAt).toLocaleDateString() : 'Never'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </Link>
@@ -110,9 +138,9 @@ export function LibraryListRow({ item }: LibraryListRowProps) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-black/20 px-3 py-2">
+    <div className="flex min-w-[102px] flex-col items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/70 px-3 py-2 text-center">
       <p className="text-[10px] uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <p className="mt-1 text-sm font-medium text-neutral-200">{value}</p>
+      <p className="mt-1 text-sm font-medium text-neutral-100">{value}</p>
     </div>
   )
 }
