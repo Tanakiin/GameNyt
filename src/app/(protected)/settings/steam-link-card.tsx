@@ -102,10 +102,6 @@ export function SteamLinkCard({
         {linked ? <UnlinkSteamButton /> : null}
       </div>
 
-      <p className="text-xs text-neutral-500">
-        Put Valve’s official button image at <code className="text-neutral-300">public/steam/sits_large_border.png</code>.
-      </p>
-
       {message ? <p className="text-sm text-emerald-400">{message}</p> : null}
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
     </div>
