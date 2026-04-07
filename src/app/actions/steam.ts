@@ -12,6 +12,13 @@ export type SteamSyncState = {
   success?: string
 }
 
+const SYNC_COOLDOWN_MS = 2 * 60 * 1000
+const RAWG_LOOKUP_DELAY_MS = 120
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 async function findOrCreateSteamGame({
   appid,
   name,
@@ -28,6 +35,8 @@ async function findOrCreateSteamGame({
   }
 
   if (name?.trim()) {
+    await sleep(RAWG_LOOKUP_DELAY_MS)
+
     const rawgSearchUrl = new URL('https://api.rawg.io/api/games')
     rawgSearchUrl.searchParams.set('key', process.env.RAWG_API_KEY!)
     rawgSearchUrl.searchParams.set('search', name)
@@ -82,8 +91,23 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
     return { error: 'Link your Steam account first.' }
   }
 
+  const now = Date.now()
+  const lastSyncedMs = linkedAccount.lastSyncedAt?.getTime()
+
+  if (lastSyncedMs && now - lastSyncedMs < SYNC_COOLDOWN_MS) {
+    const remainingSeconds = Math.ceil((SYNC_COOLDOWN_MS - (now - lastSyncedMs)) / 1000)
+    return {
+      error: `Please wait ${remainingSeconds} more seconds before syncing again.`,
+    }
+  }
+
   try {
     const ownedGames = await getOwnedSteamGames(linkedAccount.providerUserId)
+
+    let importedCount = 0
+    let updatedCount = 0
+    let gamesWithLastPlayed = 0
+    let gamesMissingLastPlayed = 0
 
     for (const steamGame of ownedGames) {
       const game = await findOrCreateSteamGame({
@@ -92,11 +116,26 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
       })
 
       const playtimeMinutes = steamGame.playtime_forever ?? 0
+      const hasLastPlayedRaw =
+        typeof steamGame.rtime_last_played === 'number' && steamGame.rtime_last_played > 0
 
-      const lastPlayedAt =
-        steamGame.rtime_last_played && steamGame.rtime_last_played > 0
-          ? new Date(steamGame.rtime_last_played * 1000)
-          : null
+      const lastPlayedAt = hasLastPlayedRaw
+        ? new Date(steamGame.rtime_last_played! * 1000)
+        : null
+
+      if (hasLastPlayedRaw) {
+        gamesWithLastPlayed += 1
+      } else if (playtimeMinutes > 0) {
+        gamesMissingLastPlayed += 1
+      }
+
+      console.log('Steam sync game:', {
+        appid: steamGame.appid,
+        name: steamGame.name,
+        playtime_forever: steamGame.playtime_forever ?? 0,
+        rtime_last_played: steamGame.rtime_last_played ?? null,
+        resolvedLastPlayedAt: lastPlayedAt?.toISOString() ?? null,
+      })
 
       const existingUserGame = await prisma.userGame.findFirst({
         where: {
@@ -119,6 +158,8 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
                 : existingUserGame.status,
           },
         })
+
+        updatedCount += 1
       } else {
         await prisma.userGame.create({
           data: {
@@ -131,6 +172,8 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
             status: playtimeMinutes > 0 ? GameStatus.PLAYING : GameStatus.UNPLAYED,
           },
         })
+
+        importedCount += 1
       }
     }
 
@@ -146,7 +189,7 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
         userId: currentUser.id,
         provider: 'STEAM',
         status: 'SUCCESS',
-        message: `Imported ${ownedGames.length} Steam games`,
+        message: `Steam sync complete. Imported ${importedCount}, updated ${updatedCount}, with last played on ${gamesWithLastPlayed} games, missing last played on ${gamesMissingLastPlayed} played games.`,
       },
     })
 
@@ -155,7 +198,9 @@ export async function syncSteamLibraryAction(): Promise<SteamSyncState> {
     revalidatePath('/settings')
     revalidatePath('/recommendations')
 
-    return { success: `Steam sync complete. Imported ${ownedGames.length} games.` }
+    return {
+      success: `Steam sync complete. Imported ${importedCount} and updated ${updatedCount}.`,
+    }
   } catch (error) {
     await prisma.syncLog.create({
       data: {
