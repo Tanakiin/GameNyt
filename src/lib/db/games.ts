@@ -111,12 +111,12 @@ export async function upsertGameFromRawg(rawgId: number) {
     coverUrl,
     backgroundImageUrl,
     screenshots: dedupedScreenshots,
+    tags: normalizeTags(rawgGame),
     description: rawgGame.description_raw ?? rawgGame.description ?? null,
     releaseDate: rawgGame.released ? new Date(rawgGame.released) : null,
     rawgRating: typeof rawgGame.rating === 'number' ? rawgGame.rating : null,
     genres: normalizeGenres(rawgGame),
     platforms: normalizePlatforms(rawgGame),
-    tags: normalizeTags(rawgGame),
   }
 
   const existing = await prisma.game.findUnique({

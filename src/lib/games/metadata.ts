@@ -143,28 +143,62 @@ export function formatDateShort(date: Date | null | undefined) {
   }).format(date)
 }
 
-const modeMatchers: Array<{ pattern: RegExp; label: string }> = [
-  { pattern: /\bsingleplayer\b/i, label: 'Singleplayer' },
-  { pattern: /\bonline co-?op\b/i, label: 'Online Co-Op' },
-  { pattern: /\blocal co-?op\b/i, label: 'Local Co-Op' },
-  { pattern: /\bco-?op\b/i, label: 'Co-Op' },
-  { pattern: /\bonline pvp\b/i, label: 'Online PvP' },
-  { pattern: /\blocal multiplayer\b/i, label: 'Local Multiplayer' },
-  { pattern: /\bcouch\b/i, label: 'Couch / Party' },
-  { pattern: /\bshared\/split screen\b/i, label: 'Shared / Split Screen' },
-  { pattern: /\bsplit screen\b/i, label: 'Shared / Split Screen' },
-  { pattern: /\blan co-?op\b/i, label: 'LAN Co-Op' },
-  { pattern: /\blan pvp\b/i, label: 'LAN PvP' },
-  { pattern: /\bmultiplayer\b/i, label: 'Multiplayer' },
+const modeMatchers: Array<{ patterns: RegExp[]; label: string }> = [
+  {
+    label: 'Singleplayer',
+    patterns: [/\bsingleplayer\b/i, /\bsingle-player\b/i],
+  },
+  {
+    label: 'Online Co-Op',
+    patterns: [/\bonline co-?op\b/i, /\bonline cooperative\b/i],
+  },
+  {
+    label: 'Local Co-Op',
+    patterns: [/\blocal co-?op\b/i, /\blocal cooperative\b/i],
+  },
+  {
+    label: 'Co-Op',
+    patterns: [/\bco-?op\b/i, /\bcooperative\b/i],
+  },
+  {
+    label: 'Online PvP',
+    patterns: [/\bonline pvp\b/i, /\bonline versus\b/i],
+  },
+  {
+    label: 'Local Multiplayer',
+    patterns: [/\blocal multiplayer\b/i],
+  },
+  {
+    label: 'Shared / Split Screen',
+    patterns: [/\bshared\/split screen\b/i, /\bsplit screen\b/i],
+  },
+  {
+    label: 'Couch / Party',
+    patterns: [/\bcouch\b/i, /\bparty\b/i],
+  },
+  {
+    label: 'LAN Co-Op',
+    patterns: [/\blan co-?op\b/i],
+  },
+  {
+    label: 'LAN PvP',
+    patterns: [/\blan pvp\b/i],
+  },
+  {
+    label: 'Multiplayer',
+    patterns: [/\bmultiplayer\b/i],
+  },
 ]
 
 export function extractPlayModes(value: unknown): string[] {
-  const names = normalizeNameList(value as JsonValue | null | undefined)
+  const names = normalizeNameList(value as Prisma.JsonValue | null | undefined)
   const found = new Set<string>()
 
   for (const name of names) {
+    const normalized = name.toLowerCase()
+
     for (const matcher of modeMatchers) {
-      if (matcher.pattern.test(name)) {
+      if (matcher.patterns.some((pattern) => pattern.test(normalized))) {
         found.add(matcher.label)
       }
     }

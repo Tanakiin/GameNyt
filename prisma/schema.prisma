@@ -31,21 +31,6 @@ enum SyncStatus {
   PARTIAL
 }
 
-model User {
-  id              String          @id @default(cuid())
-  authUserId      String?         @unique
-  email           String          @unique
-  username        String?         @unique
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  preferredGenres Json?
-  sessionLength   Int?
-
-  linkedAccounts  LinkedAccount[]
-  userGames       UserGame[]
-  syncLogs        SyncLog[]
-}
-
 model LinkedAccount {
   id             String                @id @default(cuid())
   userId         String
@@ -62,6 +47,30 @@ model LinkedAccount {
   @@index([userId])
 }
 
+
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model FriendRequest {
+  id           String              @id @default(cuid())
+  requesterId  String
+  recipientId  String
+  status       FriendRequestStatus @default(PENDING)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  requester User @relation("FriendRequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient User @relation("FriendRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, recipientId])
+  @@index([requesterId])
+  @@index([recipientId])
+}
+
 model Game {
   id                 String     @id @default(cuid())
   rawgId             Int?       @unique
@@ -71,6 +80,7 @@ model Game {
   coverUrl           String?
   backgroundImageUrl String?
   screenshots        Json?
+  tags               Json?
   description        String?
   releaseDate        DateTime?
   rawgRating         Float?
@@ -78,11 +88,28 @@ model Game {
   platforms          Json?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
-  tags               Json?
 
   userGames          UserGame[]
 
   @@index([title])
+}
+
+model User {
+  id               String          @id @default(cuid())
+  authUserId       String?         @unique
+  email            String          @unique
+  username         String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  preferredGenres  Json?
+  sessionLength    Int?
+
+  linkedAccounts   LinkedAccount[]
+  userGames        UserGame[]
+  syncLogs         SyncLog[]
+
+  sentFriendRequests     FriendRequest[] @relation("FriendRequestRequester")
+  receivedFriendRequests FriendRequest[] @relation("FriendRequestRecipient")
 }
 
 model UserGame {
